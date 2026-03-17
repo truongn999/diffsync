@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useAppStore } from './store/useAppStore'
 import TitleBar from './components/TitleBar'
 import Toolbar from './components/Toolbar'
@@ -26,6 +26,44 @@ export default function App() {
 
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showScopeSelector, setShowScopeSelector] = useState(false)
+
+  // ─── Panel Resize ─────────────────────────────
+  const [filePanelWidth, setFilePanelWidth] = useState<number | null>(null)
+  const [isResizing, setIsResizing] = useState(false)
+  const mainRef = useRef<HTMLElement>(null)
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+
+    const startX = e.clientX
+    const startWidth = filePanelWidth ?? (mainRef.current?.querySelector('.file-panel') as HTMLElement)?.offsetWidth ?? 400
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const mainEl = mainRef.current
+      if (!mainEl) return
+
+      const sidebar = mainEl.querySelector('.sidebar') as HTMLElement
+      const sidebarWidth = sidebar ? sidebar.offsetWidth : 0
+      const availableWidth = mainEl.offsetWidth - sidebarWidth
+      const delta = moveEvent.clientX - startX
+      const newWidth = Math.max(200, Math.min(availableWidth - 300, startWidth + delta))
+      setFilePanelWidth(newWidth)
+    }
+
+    const onMouseUp = () => {
+      setIsResizing(false)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [filePanelWidth])
 
   // ─── Keyboard Shortcuts ──────────────────────
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -78,12 +116,16 @@ export default function App() {
       <TitleBar />
       <Toolbar onShowShortcuts={() => setShowShortcuts(true)} />
 
-      <main className="app-main">
+      <main className="app-main" ref={mainRef}>
         <Sidebar
           collapsed={sidebarCollapsed}
           onOpenScopeSelector={() => setShowScopeSelector(true)}
         />
-        <FilePanel />
+        <FilePanel style={filePanelWidth ? { width: filePanelWidth, flex: 'none' } : undefined} />
+        <div
+          className={`resize-handle ${isResizing ? 'resize-handle--active' : ''}`}
+          onMouseDown={handleResizeStart}
+        />
         <DiffPanel />
       </main>
 
@@ -96,3 +138,4 @@ export default function App() {
     </div>
   )
 }
+

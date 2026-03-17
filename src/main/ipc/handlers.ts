@@ -9,6 +9,7 @@ import { loadConfig, saveConfig } from '../services/config'
 import { loadHistory, addHistoryEntry, removeHistoryEntry } from '../services/history'
 import { loadManifest, updateManifestAfterSync } from '../services/manifest'
 import { restoreBackup } from '../services/backup'
+import { loadRecentProjects, addRecentProject, removeRecentProject } from '../services/recentProjects'
 
 export function registerIpcHandlers(): void {
   // ─── Select Folder ───────────────────────────
@@ -119,5 +120,18 @@ export function registerIpcHandlers(): void {
     } catch {
       return false
     }
+  })
+
+  // ─── Recent Projects ──────────────────────────
+  ipcMain.handle(IPC.GET_RECENT_PROJECTS, async () => {
+    return loadRecentProjects()
+  })
+
+  ipcMain.handle(IPC.ADD_RECENT_PROJECT, async (_event, p1Path: string, p2Path: string) => {
+    return addRecentProject(p1Path, p2Path)
+  })
+
+  ipcMain.handle(IPC.REMOVE_RECENT_PROJECT, async (_event, id: number) => {
+    return removeRecentProject(id)
   })
 }

@@ -87,6 +87,15 @@ export interface SyncHistoryEntry {
   backupPaths: string[]
 }
 
+// ─── Recent Projects ─────────────────────────
+export interface RecentProject {
+  id: number
+  p1Path: string
+  p2Path: string
+  name: string
+  lastUsed: string
+}
+
 // ─── Manifest ────────────────────────────────
 export interface ManifestEntry {
   lastSyncHashP1: string
@@ -115,6 +124,9 @@ export interface ElectronAPI {
   saveConfig(projectRoot: string, config: SyncConfig): Promise<void>
   getHistory(): Promise<SyncHistoryEntry[]>
   undoSync(entryId: number): Promise<boolean>
+  getRecentProjects(): Promise<RecentProject[]>
+  addRecentProject(p1Path: string, p2Path: string): Promise<RecentProject[]>
+  removeRecentProject(id: number): Promise<RecentProject[]>
 }
 
 declare global {

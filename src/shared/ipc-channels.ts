@@ -12,6 +12,10 @@ export const IPC = {
   GET_HISTORY: 'sync:get-history',
   UNDO_SYNC: 'sync:undo-sync',
 
+  GET_RECENT_PROJECTS: 'sync:get-recent-projects',
+  ADD_RECENT_PROJECT: 'sync:add-recent-project',
+  REMOVE_RECENT_PROJECT: 'sync:remove-recent-project',
+
   // Events (main → renderer)
   SYNC_PROGRESS: 'sync:progress',
 } as const

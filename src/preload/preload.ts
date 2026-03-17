@@ -25,7 +25,15 @@ const api: ElectronAPI = {
 
   getHistory: () => ipcRenderer.invoke(IPC.GET_HISTORY),
 
-  undoSync: (entryId: number) => ipcRenderer.invoke(IPC.UNDO_SYNC, entryId)
+  undoSync: (entryId: number) => ipcRenderer.invoke(IPC.UNDO_SYNC, entryId),
+
+  getRecentProjects: () => ipcRenderer.invoke(IPC.GET_RECENT_PROJECTS),
+
+  addRecentProject: (p1Path: string, p2Path: string) =>
+    ipcRenderer.invoke(IPC.ADD_RECENT_PROJECT, p1Path, p2Path),
+
+  removeRecentProject: (id: number) =>
+    ipcRenderer.invoke(IPC.REMOVE_RECENT_PROJECT, id)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

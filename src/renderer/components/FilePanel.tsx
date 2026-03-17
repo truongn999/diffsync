@@ -2,7 +2,7 @@ import { useAppStore } from '../store/useAppStore'
 import type { CompareItem } from '../../shared/types'
 import { useState } from 'react'
 
-export default function FilePanel() {
+export default function FilePanel({ style }: { style?: React.CSSProperties }) {
   const {
     compareResult, getFilteredFiles, searchQuery, setSearchQuery,
     viewMode, setViewMode, selectedFiles, toggleFileSelection,
@@ -36,7 +36,7 @@ export default function FilePanel() {
   }
 
   return (
-    <div className="file-panel">
+    <div className="file-panel" style={style}>
       <div className="file-panel__toolbar">
         <div className="file-panel__search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>

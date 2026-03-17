@@ -1,6 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
-import type { SyncHistoryEntry } from '../../shared/types'
-import { useState } from 'react'
+import type { SyncHistoryEntry, RecentProject } from '../../shared/types'
+import { useState, useEffect } from 'react'
 
 interface SidebarProps {
   collapsed: boolean
@@ -17,6 +17,12 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
   } = useAppStore()
 
   const [configText, setConfigText] = useState(JSON.stringify(config, null, 2))
+  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
+
+  // Load recent projects on mount
+  useEffect(() => {
+    window.electronAPI.getRecentProjects().then(setRecentProjects).catch(() => {})
+  }, [])
 
   const handleSelectFolder = async (which: 'p1' | 'p2') => {
     const path = await window.electronAPI.selectFolder()
@@ -43,6 +49,8 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
       setScopeSelectedPaths(new Set(allFiles))
       setProjectLoaded(true)
       addToast(`Scanned ${allPaths.size} files from both projects`, 'success')
+      // Auto-save to recent projects
+      window.electronAPI.addRecentProject(p1Path, p2Path).then(setRecentProjects).catch(() => {})
       onOpenScopeSelector()
     } catch (err) {
       addToast(`Scan failed: ${err}`, 'error')
@@ -53,12 +61,11 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
 
   const handleSaveConfig = async () => {
     try {
-      const parsed = JSON.parse(configText)
-      setConfig(parsed)
-      if (p1Path) await window.electronAPI.saveConfig(p1Path, parsed)
+      if (p1Path) await window.electronAPI.saveConfig(p1Path, config)
+      if (p2Path) await window.electronAPI.saveConfig(p2Path, config)
       addToast('Config saved', 'success')
     } catch {
-      addToast('Invalid JSON', 'error')
+      addToast('Failed to save config', 'error')
     }
   }
 
@@ -166,14 +173,26 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
               Recent Projects
             </label>
             <div className="recent-list">
-              <div className="recent-item">
-                <span className="recent-item__name">hifunnel-dashboard</span>
-                <span className="recent-item__path">~/projects/hifunnel-dashboard</span>
-              </div>
-              <div className="recent-item">
-                <span className="recent-item__name">atlas-frontend</span>
-                <span className="recent-item__path">~/projects/atlas-frontend</span>
-              </div>
+              {recentProjects.length === 0 ? (
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', padding: 8 }}>No recent projects</p>
+              ) : (
+                recentProjects.map(rp => (
+                  <div key={rp.id} className="recent-item" onClick={() => {
+                    setP1Path(rp.p1Path)
+                    setP2Path(rp.p2Path)
+                    addToast(`Loaded: ${rp.name}`, 'info')
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span className="recent-item__name">{rp.name}</span>
+                      <span className="recent-item__path">{rp.p1Path}</span>
+                    </div>
+                    <button className="recent-item__delete" title="Remove" onClick={(e) => {
+                      e.stopPropagation()
+                      window.electronAPI.removeRecentProject(rp.id).then(setRecentProjects)
+                    }}>×</button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -181,16 +200,127 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
 
       {/* Config Tab */}
       {sidebarTab === 'config' && (
-        <div className="sidebar__section">
-          <div className="config-editor">
-            <textarea
-              className="config-editor__textarea"
-              value={configText}
-              onChange={(e) => setConfigText(e.target.value)}
-              spellCheck={false}
-            />
+        <div className="sidebar__config-scroll">
+          {/* Ignore Patterns */}
+          <div className="sidebar__section">
+            <label className="path-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 01.2 12.52M5.64 17.36a9 9 0 01-.2-12.52"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              Ignore Patterns
+            </label>
+            <div className="config-chips">
+              {config.ignore.map((pattern, i) => (
+                <span key={i} className="config-chip">
+                  {pattern}
+                  <button className="config-chip__remove" onClick={() => {
+                    const next = { ...config, ignore: config.ignore.filter((_, idx) => idx !== i) }
+                    setConfig(next)
+                  }}>×</button>
+                </span>
+              ))}
+              <input
+                className="config-chip-input"
+                placeholder="+ Add pattern"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
+                    const val = (e.target as HTMLInputElement).value.trim()
+                    setConfig({ ...config, ignore: [...config.ignore, val] });
+                    (e.target as HTMLInputElement).value = ''
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Extensions Filter */}
+          <div className="sidebar__section">
+            <label className="path-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+              Extensions Filter
+            </label>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 6px', lineHeight: 1.4 }}>
+              Empty = all files. Add extensions to limit scan.
+            </p>
+            <div className="config-chips">
+              {config.extensions.map((ext, i) => (
+                <span key={i} className="config-chip config-chip--ext">
+                  {ext}
+                  <button className="config-chip__remove" onClick={() => {
+                    const next = { ...config, extensions: config.extensions.filter((_, idx) => idx !== i) }
+                    setConfig(next)
+                  }}>×</button>
+                </span>
+              ))}
+              <input
+                className="config-chip-input"
+                placeholder="+ .ts, .tsx"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
+                    let val = (e.target as HTMLInputElement).value.trim()
+                    if (!val.startsWith('.')) val = '.' + val
+                    setConfig({ ...config, extensions: [...config.extensions, val] });
+                    (e.target as HTMLInputElement).value = ''
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Backup Settings */}
+          <div className="sidebar__section">
+            <label className="path-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Backup
+            </label>
+            <div className="config-toggle-row">
+              <span style={{ fontSize: 12 }}>Create backups before sync</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={config.backup.enabled}
+                  onChange={(e) => setConfig({ ...config, backup: { ...config.backup, enabled: e.target.checked } })}
+                />
+                <span className="toggle-switch__slider" />
+              </label>
+            </div>
+            {config.backup.enabled && (
+              <input
+                className="config-dir-input"
+                value={config.backup.directory}
+                onChange={(e) => setConfig({ ...config, backup: { ...config.backup, directory: e.target.value } })}
+                placeholder="Backup directory"
+              />
+            )}
+          </div>
+
+          {/* Advanced JSON toggle */}
+          <div className="sidebar__section">
+            <details className="config-advanced">
+              <summary className="config-advanced__summary">Advanced (JSON)</summary>
+              <textarea
+                className="config-editor__textarea"
+                value={JSON.stringify(config, null, 2)}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value)
+                    setConfig(parsed)
+                  } catch { /* ignore parse errors while typing */ }
+                }}
+                spellCheck={false}
+              />
+            </details>
+          </div>
+
+          {/* Save / Reset */}
+          <div className="sidebar__section">
             <div className="config-editor__actions">
-              <button className="btn btn--sm" onClick={() => setConfigText(JSON.stringify(config, null, 2))}>Reset</button>
+              <button className="btn btn--sm" onClick={() => {
+                const defaultConfig = {
+                  groups: [], ignore: ['node_modules/**', '.git/**', 'dist/**', 'build/**', 'out/**', 'release/**', '.next/**', '.nuxt/**', '.sync-backup/**', '.sync-manifest.json', 'sync.config.json', '.env*', '*.log', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml'],
+                  extensions: [], backup: { enabled: true, directory: '.sync-backup' }, selectedPaths: []
+                }
+                setConfig(defaultConfig)
+                addToast('Config reset to defaults', 'info')
+              }}>Reset</button>
               <button className="btn btn--primary btn--sm" onClick={handleSaveConfig}>Save</button>
             </div>
           </div>
@@ -203,21 +333,64 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
           {syncHistory.length === 0 ? (
             <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 16 }}>No sync history yet</p>
           ) : (
-            <div className="history-list">
-              {syncHistory.map(entry => (
-                <div key={entry.id} className="history-item">
-                  <div className="history-item__header">
-                    <span className="history-item__dir">{entry.from}</span>
-                    <span className="history-item__time">{new Date(entry.timestamp).toLocaleString()}</span>
-                  </div>
-                  <div className="history-item__files">{entry.files.length} files synced</div>
-                  <button className="btn btn--danger btn--xs" style={{ marginTop: 4 }} onClick={() => handleUndo(entry)}>Undo</button>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="history-list">
+                {syncHistory.map(entry => (
+                  <details key={entry.id} className="history-entry">
+                    <summary className="history-entry__summary">
+                      <div className="history-entry__info">
+                        <span className="history-entry__dir">{entry.from}</span>
+                        <span className="history-entry__meta">
+                          {entry.files.length} files · {timeAgo(entry.timestamp)}
+                        </span>
+                      </div>
+                    </summary>
+                    <div className="history-entry__files">
+                      {entry.files.map((f, i) => (
+                        <div key={i} className="history-entry__file">{f}</div>
+                      ))}
+                      <button
+                        className="btn btn--danger btn--xs"
+                        style={{ marginTop: 6, width: '100%' }}
+                        onClick={() => {
+                          if (window.confirm(`Undo sync of ${entry.files.length} files?`)) {
+                            handleUndo(entry)
+                          }
+                        }}
+                      >↩ Undo this sync</button>
+                    </div>
+                  </details>
+                ))}
+              </div>
+              <button
+                className="btn btn--ghost btn--xs"
+                style={{ marginTop: 8, width: '100%', fontSize: 10 }}
+                onClick={async () => {
+                  if (window.confirm('Clear all sync history?')) {
+                    // Clear all entries one by one
+                    for (const entry of syncHistory) {
+                      await window.electronAPI.undoSync(entry.id).catch(() => {})
+                    }
+                    setSyncHistory([])
+                    addToast('History cleared', 'info')
+                  }
+                }}
+              >Clear all history</button>
+            </>
           )}
         </div>
       )}
     </aside>
   )
+}
+
+function timeAgo(timestamp: string): string {
+  const diff = Date.now() - new Date(timestamp).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
