@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Sync Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TITLE BAR (simulated Electron frame)           -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <header class="titlebar">
+    <div class="titlebar__left">
+      <svg class="titlebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span class="titlebar__name">Project Sync Tool</span>
+    </div>
+    <div class="titlebar__center">
+      <span class="titlebar__status" id="globalStatus">Ready</span>
+    </div>
+    <div class="titlebar__controls">
+      <button class="titlebar__btn titlebar__btn--minimize">─</button>
+      <button class="titlebar__btn titlebar__btn--maximize">□</button>
+      <button class="titlebar__btn titlebar__btn--close">✕</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TOOLBAR                                         -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="toolbar">
+    <div class="toolbar__left">
+      <div class="toolbar__group">
+        <button class="btn btn--primary" id="btnCompare" onclick="handleCompare()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg>
+          Compare
+        </button>
+        <button class="btn btn--ghost" onclick="handleRefresh()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+          Refresh
+        </button>
+        <div class="toolbar__separator"></div>
+        <button class="btn btn--ghost btn--sm" id="btnShortcuts" onclick="toggleShortcutsModal()" title="Keyboard Shortcuts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="toolbar__center">
+      <div class="toolbar__filters" id="statusFilters">
+        <button class="filter-chip filter-chip--active" data-filter="all" onclick="setFilter('all', this)">
+          All <span class="filter-chip__count" id="countAll">0</span>
+        </button>
+        <button class="filter-chip" data-filter="modified" onclick="setFilter('modified', this)">
+          <span class="status-dot status-dot--modified"></span>Modified <span class="filter-chip__count" id="countModified">0</span>
+        </button>
+        <button class="filter-chip" data-filter="only_in_p1" onclick="setFilter('only_in_p1', this)">
+          <span class="status-dot status-dot--only_in_p1"></span>Only P1 <span class="filter-chip__count" id="countOnlyP1">0</span>
+        </button>
+        <button class="filter-chip" data-filter="only_in_p2" onclick="setFilter('only_in_p2', this)">
+          <span class="status-dot status-dot--only_in_p2"></span>Only P2 <span class="filter-chip__count" id="countOnlyP2">0</span>
+        </button>
+        <button class="filter-chip" data-filter="conflict" onclick="setFilter('conflict', this)">
+          <span class="status-dot status-dot--conflict"></span>Conflict <span class="filter-chip__count" id="countConflict">0</span>
+        </button>
+        <button class="filter-chip" data-filter="same" onclick="setFilter('same', this)">
+          <span class="status-dot status-dot--same"></span>Same <span class="filter-chip__count" id="countSame">0</span>
+        </button>
+      </div>
+    </div>
+    <div class="toolbar__right">
+      <div class="toolbar__group">
+        <button class="btn btn--sync btn--sync-right" id="btnSyncP1P2" disabled onclick="handleSync('p1','p2')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Sync P1 → P2
+        </button>
+        <button class="btn btn--sync btn--sync-left" id="btnSyncP2P1" disabled onclick="handleSync('p2','p1')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Sync P2 → P1
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- MAIN CONTENT                                    -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <main class="app">
+    <!-- ─── LEFT SIDEBAR ─── -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Sidebar Tabs -->
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab sidebar-tab--active" data-tab="projects" onclick="switchSidebarTab('projects', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          Projects
+        </button>
+        <button class="sidebar-tab" data-tab="config" onclick="switchSidebarTab('config', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Config
+        </button>
+        <button class="sidebar-tab" data-tab="history" onclick="switchSidebarTab('history', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          History
+        </button>
+      </div>
+
+      <!-- Tab: Projects -->
+      <div class="sidebar-tab-content sidebar-tab-content--active" id="tabProjects">
+        <div class="sidebar__section">
+          <label class="sidebar__label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+            Project 1 (Source)
+          </label>
+          <div class="path-input" id="p1Path" onclick="selectFolder('p1')">
+            <span class="path-input__text" id="p1PathText">Click to select folder...</span>
+            <button class="path-input__btn">Browse</button>
+          </div>
+        </div>
+
+        <div class="sidebar__divider">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sidebar__arrow"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </div>
+
+        <div class="sidebar__section">
+          <label class="sidebar__label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+            Project 2 (Target)
+          </label>
+          <div class="path-input" id="p2Path" onclick="selectFolder('p2')">
+            <span class="path-input__text" id="p2PathText">Click to select folder...</span>
+            <button class="path-input__btn">Browse</button>
+          </div>
+        </div>
+
+        <!-- Load Project Button -->
+        <div class="sidebar__section" id="loadProjectSection">
+          <button class="btn btn--primary btn--full" id="btnLoadProject" onclick="handleLoadProject()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Load Project
+          </button>
+          <div class="scope-info" id="scopeInfo" style="display:none;">
+            <span class="scope-info__icon">✓</span>
+            <span class="scope-info__text" id="scopeInfoText">All files selected</span>
+            <button class="btn btn--ghost btn--xs" onclick="openScopeSelector()">Edit Scope</button>
+          </div>
+        </div>
+
+        <div class="sidebar__stats" id="sidebarStats" style="display:none;">
+          <h4 class="sidebar__stats-title">Comparison Summary</h4>
+          <div class="stat-grid">
+            <div class="stat-card">
+              <span class="stat-card__value" id="statTotal">0</span>
+              <span class="stat-card__label">Total Files</span>
+            </div>
+            <div class="stat-card stat-card--modified">
+              <span class="stat-card__value" id="statModified">0</span>
+              <span class="stat-card__label">Modified</span>
+            </div>
+            <div class="stat-card stat-card--added">
+              <span class="stat-card__value" id="statAdded">0</span>
+              <span class="stat-card__label">Only in P1</span>
+            </div>
+            <div class="stat-card stat-card--removed">
+              <span class="stat-card__value" id="statRemoved">0</span>
+              <span class="stat-card__label">Only in P2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Projects -->
+        <div class="sidebar__section sidebar__recent">
+          <label class="sidebar__label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Recent Projects
+          </label>
+          <div class="recent-list" id="recentList">
+            <div class="recent-item" onclick="loadRecent(0)">
+              <span class="recent-item__name">hifunnel-dashboard</span>
+              <span class="recent-item__path">~/projects/hifunnel-dashboard</span>
+            </div>
+            <div class="recent-item" onclick="loadRecent(1)">
+              <span class="recent-item__name">atlas-frontend</span>
+              <span class="recent-item__path">~/projects/atlas-frontend</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Config Editor -->
+      <div class="sidebar-tab-content" id="tabConfig">
+        <div class="config-editor">
+          <div class="config-editor__header">
+            <span class="sidebar__label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+              sync.config.json
+            </span>
+            <button class="btn btn--ghost btn--sm" onclick="resetConfig()">Reset</button>
+          </div>
+          <textarea class="config-editor__textarea" id="configTextarea" spellcheck="false"></textarea>
+          <div class="config-editor__actions">
+            <button class="btn btn--primary btn--sm" onclick="saveConfig()">Save Config</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Sync History -->
+      <div class="sidebar-tab-content" id="tabHistory">
+        <div class="sidebar__section">
+          <label class="sidebar__label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Sync History
+          </label>
+        </div>
+        <div class="history-list" id="historyList">
+          <div class="history-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <p>No sync history yet</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="resize-handle resize-handle--sidebar" id="sidebarResize"></div>
+
+    <!-- ─── FILE LIST (CENTER) ─── -->
+    <section class="file-panel" id="filePanel">
+      <!-- Search bar with Tree View toggle -->
+      <div class="file-panel__search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search files... (Ctrl+F)" id="searchInput" oninput="handleSearch(this.value)" />
+        <span class="file-panel__search-count" id="searchCount"></span>
+        <div class="view-toggle">
+          <button class="view-toggle__btn view-toggle__btn--active" id="btnFlatView" onclick="setViewMode('flat')" title="List View">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button class="view-toggle__btn" id="btnTreeView" onclick="setViewMode('tree')" title="Tree View">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- File Table -->
+      <div class="file-table-wrap" id="fileTableWrap">
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-state__icon">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+          </svg>
+          <h3>No comparison yet</h3>
+          <p>Select two project folders and click <strong>Compare</strong> to see differences<br><small style="color:var(--text-muted)">or press <kbd>Ctrl+Enter</kbd></small></p>
+        </div>
+
+        <!-- Tree view container -->
+        <div class="tree-view" id="treeView" style="display:none;"></div>
+
+        <!-- File table (hidden initially) -->
+        <table class="file-table" id="fileTable" style="display:none;">
+          <thead>
+            <tr>
+              <th class="file-table__check">
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" />
+              </th>
+              <th class="file-table__path">File Path</th>
+              <th class="file-table__status">Status</th>
+              <th class="file-table__actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="fileTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Selection bar -->
+      <div class="selection-bar" id="selectionBar" style="display:none;">
+        <span id="selectedCount">0 files selected</span>
+        <div class="selection-bar__actions">
+          <button class="btn btn--sm btn--sync-right" onclick="handleSync('p1','p2')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Sync → P2
+          </button>
+          <button class="btn btn--sm btn--sync-left" onclick="handleSync('p2','p1')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Sync → P1
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="resize-handle resize-handle--diff" id="diffResize"></div>
+
+    <!-- ─── DIFF VIEWER (RIGHT) ─── -->
+    <section class="diff-panel" id="diffPanel">
+      <div class="diff-panel__empty" id="diffEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-state__icon">
+          <path d="M16 18l2-2-2-2M8 18l-2-2 2-2M13 6l-2 12"/>
+        </svg>
+        <h3>Select a file to view diff</h3>
+        <p>Click on any modified file in the list to see a side-by-side comparison</p>
+      </div>
+
+      <div class="diff-viewer" id="diffViewer" style="display:none;">
+        <div class="diff-viewer__header">
+          <div class="diff-viewer__file-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            <span id="diffFileName">src/hooks/useAuth.ts</span>
+            <span class="diff-viewer__badge" id="diffBadge">modified</span>
+          </div>
+          <div class="diff-viewer__actions">
+            <button class="btn btn--ghost btn--sm" onclick="toggleDiffMode()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+              Split View
+            </button>
+          </div>
+        </div>
+
+        <div class="diff-viewer__content">
+          <!-- Left side (P1) -->
+          <div class="diff-side">
+            <div class="diff-side__header">
+              <span class="diff-side__label">P1 (Source)</span>
+              <span class="diff-side__file" id="diffP1File">project-alpha/src/hooks/useAuth.ts</span>
+            </div>
+            <div class="diff-code" id="diffCodeP1">
+              <!-- Lines will be injected by JS -->
+            </div>
+          </div>
+          <!-- Right side (P2) -->
+          <div class="diff-side">
+            <div class="diff-side__header">
+              <span class="diff-side__label">P2 (Target)</span>
+              <span class="diff-side__file" id="diffP2File">project-beta/src/hooks/useAuth.ts</span>
+            </div>
+            <div class="diff-code" id="diffCodeP2">
+              <!-- Lines will be injected by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- STATUS BAR (bottom)                             -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <footer class="statusbar">
+    <div class="statusbar__left">
+      <span class="statusbar__item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Electron v28.0
+      </span>
+      <span class="statusbar__item">Node v20.10</span>
+    </div>
+    <div class="statusbar__right">
+      <span class="statusbar__item statusbar__item--shortcut" onclick="toggleShortcutsModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 16h8"/></svg>
+        <kbd>Ctrl+Enter</kbd> Compare  <kbd>↑↓</kbd> Navigate  <kbd>Space</kbd> Select
+      </span>
+      <span class="statusbar__item" id="statusBarInfo">No projects loaded</span>
+      <span class="statusbar__item statusbar__item--time" id="statusBarTime"></span>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- SCOPE SELECTOR MODAL                            -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="scopeModal" style="display:none;" onclick="if(event.target===this)closeScopeSelector()">
+    <div class="modal modal--scope">
+      <div class="modal__header">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Select Files & Folders to Sync
+        </h3>
+        <button class="btn btn--ghost btn--sm" onclick="closeScopeSelector()">✕</button>
+      </div>
+      <div class="scope-toolbar">
+        <div class="scope-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Filter files..." id="scopeSearchInput" oninput="handleScopeSearch(this.value)" />
+        </div>
+        <div class="scope-actions-top">
+          <button class="btn btn--ghost btn--xs" onclick="scopeSelectAll()">Select All</button>
+          <button class="btn btn--ghost btn--xs" onclick="scopeDeselectAll()">Deselect All</button>
+          <span class="scope-counter" id="scopeCounter">0 / 0 selected</span>
+        </div>
+      </div>
+      <div class="scope-tree" id="scopeTree">
+        <!-- Tree with checkboxes rendered by JS -->
+      </div>
+      <div class="scope-footer">
+        <div class="scope-footer__info">
+          <span id="scopeFooterInfo">Selected files will be saved to sync.config.json</span>
+        </div>
+        <div class="scope-footer__actions">
+          <button class="btn btn--ghost" onclick="closeScopeSelector()">Cancel</button>
+          <button class="btn btn--primary" onclick="saveScopeSelection()">Save Selection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- SYNC PROGRESS MODAL                             -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="syncModal" style="display:none;">
+    <div class="modal">
+      <div class="modal__header">
+        <h3>Syncing Files</h3>
+      </div>
+      <div class="modal__body">
+        <div class="progress-bar">
+          <div class="progress-bar__fill" id="syncProgress" style="width:0%"></div>
+        </div>
+        <p class="modal__status" id="syncStatus">Preparing...</p>
+        <div class="modal__file-log" id="syncLog"></div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" onclick="closeSyncModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- KEYBOARD SHORTCUTS MODAL                        -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="shortcutsModal" style="display:none;" onclick="if(event.target===this)toggleShortcutsModal()">
+    <div class="modal modal--shortcuts">
+      <div class="modal__header">
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <button class="btn btn--ghost btn--sm" onclick="toggleShortcutsModal()">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="shortcut-grid">
+          <div class="shortcut-group">
+            <h4>General</h4>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>Enter</kbd><span>Compare projects</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>R</kbd><span>Refresh comparison</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>F</kbd><span>Focus search</span></div>
+            <div class="shortcut-row"><kbd>Escape</kbd><span>Clear search / Close modal</span></div>
+            <div class="shortcut-row"><kbd>?</kbd><span>Show shortcuts</span></div>
+          </div>
+          <div class="shortcut-group">
+            <h4>File Navigation</h4>
+            <div class="shortcut-row"><kbd>↑</kbd> <kbd>↓</kbd><span>Navigate files</span></div>
+            <div class="shortcut-row"><kbd>Enter</kbd><span>Open diff for selected file</span></div>
+            <div class="shortcut-row"><kbd>Space</kbd><span>Toggle file selection</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>A</kbd><span>Select / Deselect all</span></div>
+          </div>
+          <div class="shortcut-group">
+            <h4>View</h4>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>1</kbd><span>List view</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>2</kbd><span>Tree view</span></div>
+            <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>B</kbd><span>Toggle sidebar</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- FILE PREVIEW TOOLTIP                            -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="file-preview" id="filePreview" style="display:none;">
+    <div class="file-preview__header">
+      <span class="file-preview__name" id="previewFileName"></span>
+      <span class="file-preview__badge" id="previewBadge"></span>
+    </div>
+    <div class="file-preview__code" id="previewCode"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TOAST NOTIFICATIONS                             -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
