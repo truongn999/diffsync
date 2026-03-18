@@ -39,20 +39,43 @@
   "build": {
     "appId": "com.synctool.app",
     "productName": "Project Sync Tool",
+    "copyright": "Copyright © 2026",
+    "asar": true,
     "directories": {
       "output": "release"
     },
+    "files": [
+      "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/monaco-editor/min",
+        "to": "monaco-editor",
+        "filter": ["**/*"]
+      }
+    ],
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Project Sync Tool"
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "icon": "build/icon.icns"
+      "icon": "build/icon.png"
     }
   }
 }

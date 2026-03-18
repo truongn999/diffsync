@@ -169,11 +169,11 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
       </div>
 
       <div className="toolbar__right">
-        <button className="btn btn--accent" onClick={() => handleSync('p1-to-p2')} disabled={selectedFiles.size === 0 || isSyncing}>
-          → Sync P1 → P2
+        <button className="btn" onClick={() => handleSync('p1-to-p2')} disabled={selectedFiles.size === 0 || isSyncing}>
+          Sync P1 → P2
         </button>
         <button className="btn" onClick={() => handleSync('p2-to-p1')} disabled={selectedFiles.size === 0 || isSyncing}>
-          ← Sync P2 → P1
+          Sync P2 → P1
         </button>
       </div>
     </div>
