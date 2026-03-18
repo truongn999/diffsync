@@ -15,6 +15,9 @@ export const IPC = {
   GET_RECENT_PROJECTS: 'sync:get-recent-projects',
   ADD_RECENT_PROJECT: 'sync:add-recent-project',
   REMOVE_RECENT_PROJECT: 'sync:remove-recent-project',
+  GET_FILE_CONTENT: 'sync:get-file-content',
+  START_WATCHING: 'sync:start-watching',
+  STOP_WATCHING: 'sync:stop-watching',
 
   // Events (main → renderer)
   SYNC_PROGRESS: 'sync:progress',

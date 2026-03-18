@@ -24,6 +24,23 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
     window.electronAPI.getRecentProjects().then(setRecentProjects).catch(() => {})
   }, [])
 
+  const [dragOverP1, setDragOverP1] = useState(false)
+  const [dragOverP2, setDragOverP2] = useState(false)
+
+  const handleDrop = (which: 'p1' | 'p2') => (e: React.DragEvent) => {
+    e.preventDefault()
+    which === 'p1' ? setDragOverP1(false) : setDragOverP2(false)
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      const path = (files[0] as any).path as string
+      if (path) {
+        if (which === 'p1') setP1Path(path)
+        else setP2Path(path)
+        addToast(`Folder set: ${path}`, 'info')
+      }
+    }
+  }
+
   const handleSelectFolder = async (which: 'p1' | 'p2') => {
     const path = await window.electronAPI.selectFolder()
     if (path) {
@@ -109,9 +126,15 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
               Project 1 (Source)
             </label>
-            <div className={`path-input ${p1Path ? 'path-input--active' : ''}`} onClick={() => handleSelectFolder('p1')}>
+            <div
+              className={`path-input ${p1Path ? 'path-input--active' : ''} ${dragOverP1 ? 'path-input--dragover' : ''}`}
+              onClick={() => handleSelectFolder('p1')}
+              onDragOver={(e) => { e.preventDefault(); setDragOverP1(true) }}
+              onDragLeave={() => setDragOverP1(false)}
+              onDrop={handleDrop('p1')}
+            >
               <span className={`path-input__text ${!p1Path ? 'path-input__text--placeholder' : ''}`}>
-                {p1Path || 'Click to select folder...'}
+                {dragOverP1 ? 'Drop folder here...' : (p1Path || 'Click or drop folder...')}
               </span>
               <button className="btn btn--xs">Browse</button>
             </div>
@@ -129,9 +152,15 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
               Project 2 (Target)
             </label>
-            <div className={`path-input ${p2Path ? 'path-input--active' : ''}`} onClick={() => handleSelectFolder('p2')}>
+            <div
+              className={`path-input ${p2Path ? 'path-input--active' : ''} ${dragOverP2 ? 'path-input--dragover' : ''}`}
+              onClick={() => handleSelectFolder('p2')}
+              onDragOver={(e) => { e.preventDefault(); setDragOverP2(true) }}
+              onDragLeave={() => setDragOverP2(false)}
+              onDrop={handleDrop('p2')}
+            >
               <span className={`path-input__text ${!p2Path ? 'path-input__text--placeholder' : ''}`}>
-                {p2Path || 'Click to select folder...'}
+                {dragOverP2 ? 'Drop folder here...' : (p2Path || 'Click or drop folder...')}
               </span>
               <button className="btn btn--xs">Browse</button>
             </div>

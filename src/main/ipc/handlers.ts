@@ -10,6 +10,7 @@ import { loadHistory, addHistoryEntry, removeHistoryEntry } from '../services/hi
 import { loadManifest, updateManifestAfterSync } from '../services/manifest'
 import { restoreBackup } from '../services/backup'
 import { loadRecentProjects, addRecentProject, removeRecentProject } from '../services/recentProjects'
+import { startWatching, stopWatching } from '../services/watcher'
 
 export function registerIpcHandlers(): void {
   // ─── Select Folder ───────────────────────────
@@ -133,5 +134,27 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.REMOVE_RECENT_PROJECT, async (_event, id: number) => {
     return removeRecentProject(id)
+  })
+
+  // ─── File Content ─────────────────────────────
+  ipcMain.handle(IPC.GET_FILE_CONTENT, async (_event, rootPath: string, relativePath: string) => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const fullPath = path.join(rootPath, relativePath)
+    try {
+      return await fs.promises.readFile(fullPath, 'utf-8')
+    } catch {
+      return ''
+    }
+  })
+
+  // ─── File Watcher ─────────────────────────────
+  ipcMain.handle(IPC.START_WATCHING, async (_event, p1Path: string, p2Path: string, ignore: string[]) => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) startWatching(p1Path, p2Path, ignore, win)
+  })
+
+  ipcMain.handle(IPC.STOP_WATCHING, async () => {
+    stopWatching()
   })
 }

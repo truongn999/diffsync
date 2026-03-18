@@ -74,6 +74,9 @@ interface AppState {
   // Sync progress
   syncProgress: { current: number; total: number; file: string } | null
 
+  // File Watcher
+  isWatching: boolean
+
   // Actions
   setP1Path: (p: string | null) => void
   setP2Path: (p: string | null) => void
@@ -100,6 +103,7 @@ interface AppState {
   addToast: (message: string, type: 'success' | 'error' | 'info') => void
   removeToast: (id: number) => void
   setSyncProgress: (p: { current: number; total: number; file: string } | null) => void
+  setIsWatching: (v: boolean) => void
 
   // Computed helpers
   getFilteredFiles: () => CompareItem[]
@@ -130,6 +134,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   syncHistory: [],
   toasts: [],
   syncProgress: null,
+  isWatching: false,
 
   setP1Path: (p) => set({ p1Path: p }),
   setP2Path: (p) => set({ p2Path: p }),
@@ -170,6 +175,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     toasts: state.toasts.filter(t => t.id !== id)
   })),
   setSyncProgress: (p) => set({ syncProgress: p }),
+  setIsWatching: (v) => set({ isWatching: v }),
 
   getFilteredFiles: () => {
     const { compareResult, currentFilter, searchQuery } = get()

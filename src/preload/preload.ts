@@ -33,7 +33,22 @@ const api: ElectronAPI = {
     ipcRenderer.invoke(IPC.ADD_RECENT_PROJECT, p1Path, p2Path),
 
   removeRecentProject: (id: number) =>
-    ipcRenderer.invoke(IPC.REMOVE_RECENT_PROJECT, id)
+    ipcRenderer.invoke(IPC.REMOVE_RECENT_PROJECT, id),
+
+  getFileContent: (rootPath: string, relativePath: string) =>
+    ipcRenderer.invoke(IPC.GET_FILE_CONTENT, rootPath, relativePath),
+
+  startWatching: (p1Path: string, p2Path: string, ignore: string[]) =>
+    ipcRenderer.invoke(IPC.START_WATCHING, p1Path, p2Path, ignore),
+
+  stopWatching: () =>
+    ipcRenderer.invoke(IPC.STOP_WATCHING),
+
+  onFilesChanged: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('files-changed', handler)
+    return () => { ipcRenderer.removeListener('files-changed', handler) }
+  }
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

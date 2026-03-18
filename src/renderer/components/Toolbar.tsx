@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
 import type { FileStatus } from '../../shared/types'
+import { useEffect, useRef } from 'react'
 
 const FILTERS: { key: FileStatus | 'all'; label: string; color?: string }[] = [
   { key: 'all', label: 'All' },
@@ -19,8 +20,10 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
     compareResult, currentFilter, setFilter, isComparing,
     p1Path, p2Path, config, setCompareResult, setIsComparing,
     addToast, selectedFiles, isSyncing, setIsSyncing, setSyncProgress,
-    setSyncHistory
+    setSyncHistory, isWatching, setIsWatching
   } = useAppStore()
+
+  const cleanupRef = useRef<(() => void) | null>(null)
 
   const handleCompare = async () => {
     if (!p1Path || !p2Path) {
@@ -70,6 +73,36 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
 
   const stats = compareResult?.stats
 
+  const handleToggleWatch = async () => {
+    if (isWatching) {
+      await window.electronAPI.stopWatching()
+      if (cleanupRef.current) cleanupRef.current()
+      cleanupRef.current = null
+      setIsWatching(false)
+      addToast('File watcher stopped', 'info')
+    } else {
+      if (!p1Path || !p2Path) {
+        addToast('Select both projects first', 'error')
+        return
+      }
+      await window.electronAPI.startWatching(p1Path, p2Path, config.ignore)
+      cleanupRef.current = window.electronAPI.onFilesChanged(() => {
+        // Auto re-compare on file change
+        handleCompare()
+      })
+      setIsWatching(true)
+      addToast('Watching for file changes...', 'success')
+    }
+  }
+
+  // Cleanup watcher on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) cleanupRef.current()
+      window.electronAPI.stopWatching().catch(() => {})
+    }
+  }, [])
+
   return (
     <div className="toolbar">
       <div className="toolbar__left">
@@ -84,6 +117,17 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
             Refresh
           </button>
           <div className="toolbar__separator" />
+          <button
+            className={`btn btn--sm ${isWatching ? 'btn--accent' : 'btn--ghost'}`}
+            onClick={handleToggleWatch}
+            title={isWatching ? 'Stop watching' : 'Watch for changes'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            {isWatching ? 'Watching' : 'Watch'}
+          </button>
           <button className="btn btn--ghost btn--sm" onClick={onShowShortcuts} title="Keyboard Shortcuts">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/></svg>
           </button>

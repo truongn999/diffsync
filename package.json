@@ -13,8 +13,11 @@
     "package:mac": "electron-vite build && electron-builder --mac"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "chokidar": "^5.0.0",
     "diff": "^7.0.0",
     "fast-glob": "^3.3.3",
+    "monaco-editor": "^0.55.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.3"
@@ -40,11 +43,15 @@
       "output": "release"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "build/icon.ico"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "build/icon.icns"
     }
   }
