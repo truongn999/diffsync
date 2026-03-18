@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc/handlers'
@@ -30,6 +30,15 @@ function createWindow(): void {
   // Show window when ready to prevent visual flash
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  // Update titlebar overlay when theme changes
+  ipcMain.on('set-titlebar-theme', (_event, theme: string) => {
+    const isDark = theme === 'dark'
+    mainWindow.setTitleBarOverlay({
+      color: isDark ? '#161b22' : '#f6f8fa',
+      symbolColor: isDark ? '#8b949e' : '#656d76'
+    })
   })
 
   // Open external links in browser

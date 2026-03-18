@@ -218,6 +218,7 @@ html, body, #root {
   gap: var(--space-sm);
   padding: 6px var(--space-md);
   background: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
   border-bottom: 1px solid var(--border-primary);
   min-height: 48px;
 }
@@ -912,7 +913,6 @@ html, body, #root {
 .titlebar {
   height: 38px;
   background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-secondary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1032,7 +1032,6 @@ html, body, #root {
 
 .recent-item {
   display: flex;
-  flex-direction: column;
   gap: 2px;
   padding: var(--space-sm) var(--space-md);
   background: var(--bg-primary);
@@ -1361,4 +1360,25 @@ html, body, #root {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.file-list__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--space-sm);
+  color: var(--text-muted);
+  padding: var(--space-xl);
+}
+
+.file-list__empty svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.4;
+}
+
+.file-list__empty p {
+  font-size: 13px;
 }

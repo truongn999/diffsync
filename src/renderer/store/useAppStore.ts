@@ -182,6 +182,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     document.documentElement.setAttribute('data-theme', t)
     set({ theme: t })
     window.electronAPI.saveTheme(t)
+    window.electronAPI.setTitleBarTheme(t)
   },
 
   getFilteredFiles: () => {

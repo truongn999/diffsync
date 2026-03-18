@@ -64,7 +64,7 @@ export default function DiffPanel() {
   if (!activeFile) {
     return (
       <div className="diff-panel">
-        <div className="diff-panel__placeholder">
+        <div className="file-list__empty">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
             <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
           </svg>

@@ -60,9 +60,10 @@ export default function FilePanel({ style }: { style?: React.CSSProperties }) {
 
       <div className="file-list">
         {!compareResult ? (
-          <div className="diff-panel__placeholder">
+          <div className="file-list__empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
-            <p>Click Compare to scan files</p>
+            <h3>No comparison yet</h3>
+            <p style={{ fontSize: 12 }}>Select two project folders and click Compare to see differences</p>
           </div>
         ) : (
           <>

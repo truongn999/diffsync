@@ -134,6 +134,7 @@ export interface ElectronAPI {
   exportReport(p1Path: string, p2Path: string, compareResult: CompareResult): Promise<string | null>
   loadTheme(): Promise<'light' | 'dark'>
   saveTheme(theme: 'light' | 'dark'): Promise<void>
+  setTitleBarTheme(theme: 'light' | 'dark'): void
 }
 
 declare global {
