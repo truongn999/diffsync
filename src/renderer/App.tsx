@@ -21,11 +21,20 @@ export default function App() {
     isComparing,
     isSyncing,
     addToast,
-    setViewMode
+    setViewMode,
+    setTheme
   } = useAppStore()
 
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showScopeSelector, setShowScopeSelector] = useState(false)
+
+  // Load saved theme on mount
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark') // default immediately
+    window.electronAPI.loadTheme().then((savedTheme) => {
+      setTheme(savedTheme)
+    })
+  }, [])
 
   // ─── Panel Resize ─────────────────────────────
   const [filePanelWidth, setFilePanelWidth] = useState<number | null>(null)

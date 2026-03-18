@@ -12,9 +12,6 @@ const DEFAULT_CONFIG: SyncConfig = {
     'release/**',
     '.next/**',
     '.nuxt/**',
-    '.sync-backup/**',
-    '.sync-manifest.json',
-    'sync.config.json',
     '.env*',
     '*.log',
     'package-lock.json',
@@ -22,7 +19,7 @@ const DEFAULT_CONFIG: SyncConfig = {
     'pnpm-lock.yaml'
   ],
   extensions: [],
-  backup: { enabled: true, directory: '.sync-backup' },
+  backup: { enabled: true, directory: 'backup' },
   selectedPaths: []
 }
 
@@ -77,6 +74,9 @@ interface AppState {
   // File Watcher
   isWatching: boolean
 
+  // Theme
+  theme: 'light' | 'dark'
+
   // Actions
   setP1Path: (p: string | null) => void
   setP2Path: (p: string | null) => void
@@ -104,6 +104,7 @@ interface AppState {
   removeToast: (id: number) => void
   setSyncProgress: (p: { current: number; total: number; file: string } | null) => void
   setIsWatching: (v: boolean) => void
+  setTheme: (t: 'light' | 'dark') => void
 
   // Computed helpers
   getFilteredFiles: () => CompareItem[]
@@ -135,6 +136,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   toasts: [],
   syncProgress: null,
   isWatching: false,
+  theme: 'dark',
 
   setP1Path: (p) => set({ p1Path: p }),
   setP2Path: (p) => set({ p2Path: p }),
@@ -176,6 +178,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   })),
   setSyncProgress: (p) => set({ syncProgress: p }),
   setIsWatching: (v) => set({ isWatching: v }),
+  setTheme: (t) => {
+    document.documentElement.setAttribute('data-theme', t)
+    set({ theme: t })
+    window.electronAPI.saveTheme(t)
+  },
 
   getFilteredFiles: () => {
     const { compareResult, currentFilter, searchQuery } = get()

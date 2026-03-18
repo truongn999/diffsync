@@ -132,6 +132,8 @@ export interface ElectronAPI {
   stopWatching(): Promise<void>
   onFilesChanged(callback: () => void): () => void
   exportReport(p1Path: string, p2Path: string, compareResult: CompareResult): Promise<string | null>
+  loadTheme(): Promise<'light' | 'dark'>
+  saveTheme(theme: 'light' | 'dark'): Promise<void>
 }
 
 declare global {

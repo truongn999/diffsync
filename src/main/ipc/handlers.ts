@@ -1,4 +1,6 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import * as fs from 'fs'
+import * as path from 'path'
+import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { IPC } from '../../shared/ipc-channels'
 import type { SyncConfig, SyncParams } from '../../shared/types'
 import { scanProject, filterByScope } from '../services/scanner'
@@ -174,5 +176,22 @@ export function registerIpcHandlers(): void {
 
     await generateReport(p1Path, p2Path, compareResult, result.filePath)
     return result.filePath
+  })
+
+  // ─── Theme ──────────────────────────────────
+  const themePath = path.join(app.getPath('userData'), 'theme.json')
+
+  ipcMain.handle(IPC.LOAD_THEME, async () => {
+    try {
+      const content = await fs.promises.readFile(themePath, 'utf-8')
+      const { theme } = JSON.parse(content)
+      return theme === 'light' ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
+
+  ipcMain.handle(IPC.SAVE_THEME, async (_event, theme: string) => {
+    await fs.promises.writeFile(themePath, JSON.stringify({ theme }), 'utf-8')
   })
 }

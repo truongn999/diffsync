@@ -23,12 +23,13 @@ function getLanguage(filePath: string): string {
 }
 
 export default function DiffPanel() {
-  const { activeFile, isDiffLoading, p1Path, p2Path } = useAppStore()
+  const { activeFile, isDiffLoading, p1Path, p2Path, theme } = useAppStore()
   const [p1Content, setP1Content] = useState('')
   const [p2Content, setP2Content] = useState('')
   const [isInline, setIsInline] = useState(false)
 
   const diffEditorRef = useRef<any>(null)
+  const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light'
 
   useEffect(() => {
     if (diffEditorRef.current) {
@@ -122,11 +123,11 @@ export default function DiffPanel() {
 
       <div className="diff-panel__monaco">
         <DiffEditor
-          key={`diff-${isInline ? 'inline' : 'sbs'}`}
+          key={`diff-${isInline ? 'inline' : 'sbs'}-${theme}`}
           original={p1Content}
           modified={p2Content}
           language={language}
-          theme="vs-dark"
+          theme={monacoTheme}
           onMount={(editor) => { diffEditorRef.current = editor }}
           options={{
             readOnly: true,

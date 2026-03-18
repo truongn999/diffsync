@@ -51,7 +51,10 @@ const api: ElectronAPI = {
   },
 
   exportReport: (p1Path: string, p2Path: string, compareResult: any) =>
-    ipcRenderer.invoke(IPC.EXPORT_REPORT, p1Path, p2Path, compareResult)
+    ipcRenderer.invoke(IPC.EXPORT_REPORT, p1Path, p2Path, compareResult),
+
+  loadTheme: () => ipcRenderer.invoke(IPC.LOAD_THEME),
+  saveTheme: (theme: string) => ipcRenderer.invoke(IPC.SAVE_THEME, theme)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

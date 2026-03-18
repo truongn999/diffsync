@@ -20,7 +20,7 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
     compareResult, currentFilter, setFilter, isComparing,
     p1Path, p2Path, config, setCompareResult, setIsComparing,
     addToast, selectedFiles, isSyncing, setIsSyncing, setSyncProgress,
-    setSyncHistory, isWatching, setIsWatching
+    setSyncHistory, isWatching, setIsWatching, theme, setTheme
   } = useAppStore()
 
   const cleanupRef = useRef<(() => void) | null>(null)
@@ -148,6 +148,13 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
           </button>
           <button className="btn btn--ghost btn--sm" onClick={onShowShortcuts} title="Keyboard Shortcuts">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/></svg>
+          </button>
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
           </button>
         </div>
       </div>

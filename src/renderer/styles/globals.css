@@ -1,7 +1,28 @@
 /* ═══════════════════════════════════════════════ */
-/* DESIGN TOKENS                                   */
+/* DESIGN TOKENS — Layout (theme-independent)      */
 /* ═══════════════════════════════════════════════ */
 :root {
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius: var(--radius-md);
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  --font-sans: 'Segoe UI', -apple-system, system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+
+  --transition-fast: 0.15s ease;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* DARK THEME (default)                            */
+/* ═══════════════════════════════════════════════ */
+[data-theme="dark"] {
   --bg-primary: #0d1117;
   --bg-secondary: #161b22;
   --bg-tertiary: #1c2128;
@@ -14,6 +35,7 @@
 
   --border-primary: #30363d;
   --border-secondary: #21262d;
+  --border: #30363d;
 
   --accent: #58a6ff;
   --accent-hover: #79b8ff;
@@ -29,21 +51,40 @@
   --color-diff-add-text: #3fb950;
   --color-diff-del-bg: rgba(248, 81, 73, 0.15);
   --color-diff-del-text: #f85149;
+}
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+/* ═══════════════════════════════════════════════ */
+/* LIGHT THEME                                     */
+/* ═══════════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --bg-hover: #e2e8f0;
+  --bg-active: #d8dee4;
 
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 24px;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-muted: #8b949e;
 
-  --font-sans: 'Segoe UI', -apple-system, system-ui, sans-serif;
-  --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  --border-primary: #d0d7de;
+  --border-secondary: #e2e8f0;
+  --border: #d0d7de;
 
-  --transition-fast: 0.15s ease;
+  --accent: #0969da;
+  --accent-hover: #0550ae;
+  --accent-bg: rgba(9, 105, 218, 0.08);
+
+  --color-modified: #9a6700;
+  --color-only-p1: #1a7f37;
+  --color-only-p2: #8250df;
+  --color-conflict: #cf222e;
+  --color-same: #8b949e;
+
+  --color-diff-add-bg: rgba(46, 160, 67, 0.1);
+  --color-diff-add-text: #1a7f37;
+  --color-diff-del-bg: rgba(248, 81, 73, 0.1);
+  --color-diff-del-text: #cf222e;
 }
 
 /* ═══════════════════════════════════════════════ */

@@ -19,6 +19,8 @@ export const IPC = {
   START_WATCHING: 'sync:start-watching',
   STOP_WATCHING: 'sync:stop-watching',
   EXPORT_REPORT: 'sync:export-report',
+  LOAD_THEME: 'sync:load-theme',
+  SAVE_THEME: 'sync:save-theme',
 
   // Events (main → renderer)
   SYNC_PROGRESS: 'sync:progress',
