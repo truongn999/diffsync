@@ -131,6 +131,7 @@ export interface ElectronAPI {
   startWatching(p1Path: string, p2Path: string, ignore: string[]): Promise<void>
   stopWatching(): Promise<void>
   onFilesChanged(callback: () => void): () => void
+  exportReport(p1Path: string, p2Path: string, compareResult: CompareResult): Promise<string | null>
 }
 
 declare global {

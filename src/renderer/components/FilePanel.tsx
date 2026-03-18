@@ -1,6 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
 import type { CompareItem } from '../../shared/types'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 export default function FilePanel({ style }: { style?: React.CSSProperties }) {
   const {
@@ -104,9 +104,37 @@ function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabe
   const parts = file.relativePath.split('/')
   const name = parts.pop()!
   const dir = parts.join('/') + '/'
+  const [preview, setPreview] = useState<string | null>(null)
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const { p1Path, p2Path } = useAppStore()
+
+  const handleMouseEnter = () => {
+    hoverTimerRef.current = setTimeout(async () => {
+      const rootPath = file.p1 ? p1Path : p2Path
+      if (!rootPath) return
+      try {
+        const content = await window.electronAPI.getFileContent(rootPath, file.relativePath)
+        const lines = content.split('\n').slice(0, 20)
+        setPreview(lines.join('\n') + (content.split('\n').length > 20 ? '\n...' : ''))
+      } catch {
+        setPreview(null)
+      }
+    }, 300)
+  }
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    setPreview(null)
+  }
 
   return (
-    <div className={`file-row ${isActive ? 'file-row--active' : ''}`} onClick={onClick}>
+    <div
+      className={`file-row ${isActive ? 'file-row--active' : ''}`}
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <div className="file-row__check" onClick={e => e.stopPropagation()}>
         <input type="checkbox" checked={isSelected} onChange={onToggle} />
       </div>
@@ -125,6 +153,12 @@ function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabe
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
+      {preview !== null && (
+        <div className="file-preview-tooltip">
+          <div className="file-preview-tooltip__header">{file.relativePath}</div>
+          <pre className="file-preview-tooltip__content">{preview}</pre>
+        </div>
+      )}
     </div>
   )
 }

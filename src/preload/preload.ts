@@ -48,7 +48,10 @@ const api: ElectronAPI = {
     const handler = () => callback()
     ipcRenderer.on('files-changed', handler)
     return () => { ipcRenderer.removeListener('files-changed', handler) }
-  }
+  },
+
+  exportReport: (p1Path: string, p2Path: string, compareResult: any) =>
+    ipcRenderer.invoke(IPC.EXPORT_REPORT, p1Path, p2Path, compareResult)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

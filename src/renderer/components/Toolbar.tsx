@@ -128,6 +128,24 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
             </svg>
             {isWatching ? 'Watching' : 'Watch'}
           </button>
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={async () => {
+              if (!p1Path || !p2Path || !compareResult) {
+                addToast('Run Compare first', 'error')
+                return
+              }
+              const filePath = await window.electronAPI.exportReport(p1Path, p2Path, compareResult)
+              if (filePath) addToast(`Report saved: ${filePath}`, 'success')
+            }}
+            disabled={!compareResult}
+            title="Export Diff Report as HTML"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/>
+            </svg>
+            Export
+          </button>
           <button className="btn btn--ghost btn--sm" onClick={onShowShortcuts} title="Keyboard Shortcuts">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/></svg>
           </button>

@@ -11,6 +11,7 @@ import { loadManifest, updateManifestAfterSync } from '../services/manifest'
 import { restoreBackup } from '../services/backup'
 import { loadRecentProjects, addRecentProject, removeRecentProject } from '../services/recentProjects'
 import { startWatching, stopWatching } from '../services/watcher'
+import { generateReport } from '../services/reportGenerator'
 
 export function registerIpcHandlers(): void {
   // ─── Select Folder ───────────────────────────
@@ -156,5 +157,22 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.STOP_WATCHING, async () => {
     stopWatching()
+  })
+
+  // ─── Export Report ────────────────────────────
+  ipcMain.handle(IPC.EXPORT_REPORT, async (_event, p1Path: string, p2Path: string, compareResult: any) => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return null
+
+    const result = await dialog.showSaveDialog(win, {
+      title: 'Export Diff Report',
+      defaultPath: `diff-report-${Date.now()}.html`,
+      filters: [{ name: 'HTML', extensions: ['html'] }]
+    })
+
+    if (result.canceled || !result.filePath) return null
+
+    await generateReport(p1Path, p2Path, compareResult, result.filePath)
+    return result.filePath
   })
 }

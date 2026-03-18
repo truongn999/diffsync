@@ -18,6 +18,7 @@ export const IPC = {
   GET_FILE_CONTENT: 'sync:get-file-content',
   START_WATCHING: 'sync:start-watching',
   STOP_WATCHING: 'sync:stop-watching',
+  EXPORT_REPORT: 'sync:export-report',
 
   // Events (main → renderer)
   SYNC_PROGRESS: 'sync:progress',
