@@ -1,29 +1,30 @@
-import chokidar from 'chokidar'
 import type { BrowserWindow } from 'electron'
 
-let watcher: ReturnType<typeof chokidar.watch> | null = null
+let watcher: any = null
 let debounceTimer: NodeJS.Timeout | null = null
 
 const DEBOUNCE_MS = 1000
 
-export function startWatching(
+export async function startWatching(
   p1Root: string,
   p2Root: string,
   ignore: string[],
   mainWindow: BrowserWindow
-): void {
+): Promise<void> {
   // Stop any existing watcher
-  stopWatching()
+  await stopWatching()
+
+  // Dynamic import because chokidar v4 is ESM-only
+  const chokidar = await import('chokidar')
 
   const watchPaths = [p1Root, p2Root]
   const ignored = ignore.map(pattern => {
-    // Convert glob patterns to regex-friendly patterns for chokidar
     if (pattern.endsWith('/**')) return pattern.slice(0, -3)
     return pattern
   })
 
   watcher = chokidar.watch(watchPaths, {
-    ignored: [/(^|[\/\\])\../, ...ignored, '**/node_modules/**'],
+    ignored: [/(^|[\/\\])\.\./, ...ignored, '**/node_modules/**'],
     persistent: true,
     ignoreInitial: true,
     depth: 10,
@@ -50,9 +51,9 @@ export function startWatching(
   console.log('[Watcher] Started watching:', watchPaths.join(', '))
 }
 
-export function stopWatching(): void {
+export async function stopWatching(): Promise<void> {
   if (watcher) {
-    watcher.close()
+    await watcher.close()
     watcher = null
     console.log('[Watcher] Stopped watching')
   }

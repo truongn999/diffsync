@@ -532,6 +532,68 @@ html, body, #root {
   overflow: hidden;
 }
 
+.diff-panel__mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+
+.diff-panel__mode-toggle .btn {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+/* ─── Classic Diff Viewer ─────────────────────── */
+.diff-container { display: flex; flex: 1; overflow: hidden; }
+
+.diff-side {
+  flex: 1;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.diff-side + .diff-side { border-left: 1px solid var(--border-primary); }
+
+.diff-side__header {
+  padding: 4px var(--space-md);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-secondary);
+  position: sticky;
+  top: 0;
+}
+
+.diff-line {
+  display: flex;
+  min-height: 20px;
+  padding: 0 var(--space-sm);
+}
+
+.diff-line--add { background: var(--color-diff-add-bg); }
+.diff-line--remove { background: var(--color-diff-del-bg); }
+
+.diff-line__num {
+  width: 40px;
+  text-align: right;
+  padding-right: 8px;
+  color: var(--text-muted);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.diff-line__content {
+  flex: 1;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.diff-line--add .diff-line__content { color: var(--color-diff-add-text); }
+.diff-line--remove .diff-line__content { color: var(--color-diff-del-text); }
+
 /* ═══════════════════════════════════════════════ */
 /* MODAL                                            */
 /* ═══════════════════════════════════════════════ */
