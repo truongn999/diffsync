@@ -120,8 +120,8 @@ export interface ElectronAPI {
   compareProjects(p1Root: string, p2Root: string, config: SyncConfig): Promise<CompareResult>
   getDiff(p1Root: string, p2Root: string, relativePath: string): Promise<DiffResult>
   syncFiles(params: SyncParams, config: SyncConfig): Promise<SyncResult>
-  loadConfig(projectRoot: string): Promise<SyncConfig>
-  saveConfig(projectRoot: string, config: SyncConfig): Promise<void>
+  loadConfig(p1Root: string, p2Root: string): Promise<SyncConfig>
+  saveConfig(p1Root: string, p2Root: string, config: SyncConfig): Promise<void>
   getHistory(): Promise<SyncHistoryEntry[]>
   undoSync(entryId: number): Promise<boolean>
   getRecentProjects(): Promise<RecentProject[]>

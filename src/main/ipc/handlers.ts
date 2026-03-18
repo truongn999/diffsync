@@ -46,7 +46,7 @@ export function registerIpcHandlers(): void {
     const p2Filtered = filterByScope(scan2.files, config.selectedPaths)
 
     // Load manifest for conflict detection
-    const manifest = await loadManifest(p1Root)
+    const manifest = await loadManifest(p1Root, p2Root)
 
     return compareFiles(p1Filtered, p2Filtered, manifest)
   })
@@ -76,7 +76,7 @@ export function registerIpcHandlers(): void {
       scan1.files.forEach((f, k) => p1Hashes.set(k, f.hash))
       scan2.files.forEach((f, k) => p2Hashes.set(k, f.hash))
 
-      await updateManifestAfterSync(params.p1Root, result.syncedFiles, p1Hashes, p2Hashes)
+      await updateManifestAfterSync(params.p1Root, params.p2Root, result.syncedFiles, p1Hashes, p2Hashes)
 
       // Add to history
       await addHistoryEntry({
@@ -92,12 +92,12 @@ export function registerIpcHandlers(): void {
   })
 
   // ─── Config ──────────────────────────────────
-  ipcMain.handle(IPC.LOAD_CONFIG, async (_event, projectRoot: string) => {
-    return loadConfig(projectRoot)
+  ipcMain.handle(IPC.LOAD_CONFIG, async (_event, p1Root: string, p2Root: string) => {
+    return loadConfig(p1Root, p2Root)
   })
 
-  ipcMain.handle(IPC.SAVE_CONFIG, async (_event, projectRoot: string, config: SyncConfig) => {
-    await saveConfig(projectRoot, config)
+  ipcMain.handle(IPC.SAVE_CONFIG, async (_event, p1Root: string, p2Root: string, config: SyncConfig) => {
+    await saveConfig(p1Root, p2Root, config)
   })
 
   // ─── History ─────────────────────────────────

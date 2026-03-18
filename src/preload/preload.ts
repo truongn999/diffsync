@@ -17,11 +17,11 @@ const api: ElectronAPI = {
   syncFiles: (params: SyncParams, config: SyncConfig) =>
     ipcRenderer.invoke(IPC.SYNC_FILES, params, config),
 
-  loadConfig: (projectRoot: string) =>
-    ipcRenderer.invoke(IPC.LOAD_CONFIG, projectRoot),
+  loadConfig: (p1Root: string, p2Root: string) =>
+    ipcRenderer.invoke(IPC.LOAD_CONFIG, p1Root, p2Root),
 
-  saveConfig: (projectRoot: string, config: SyncConfig) =>
-    ipcRenderer.invoke(IPC.SAVE_CONFIG, projectRoot, config),
+  saveConfig: (p1Root: string, p2Root: string, config: SyncConfig) =>
+    ipcRenderer.invoke(IPC.SAVE_CONFIG, p1Root, p2Root, config),
 
   getHistory: () => ipcRenderer.invoke(IPC.GET_HISTORY),
 

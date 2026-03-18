@@ -1,23 +1,24 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { getProjectDataDir } from './dataDir'
 
 /**
  * Creates a timestamped backup of a file before overwrite.
- * Backup stored at: <projectRoot>/<backupDir>/<timestamp>/<relativePath>
+ * Backup stored at: %APPDATA%/project-sync-tool/projects/<hash>/backup/<timestamp>/<relativePath>
  */
 export async function createBackup(
+  p1Root: string,
+  p2Root: string,
   projectRoot: string,
   relativePath: string,
-  backupDir = '.sync-backup'
+  backupSubDir = 'backup'
 ): Promise<string> {
+  const dataDir = getProjectDataDir(p1Root, p2Root)
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const backupPath = path.join(projectRoot, backupDir, timestamp, relativePath)
+  const backupPath = path.join(dataDir, backupSubDir, timestamp, relativePath)
   const sourcePath = path.join(projectRoot, relativePath)
 
-  // Ensure backup directory exists
   await fs.promises.mkdir(path.dirname(backupPath), { recursive: true })
-
-  // Copy file to backup location
   await fs.promises.copyFile(sourcePath, backupPath)
 
   return backupPath
@@ -32,26 +33,24 @@ export async function restoreBackup(
   relativePath: string
 ): Promise<void> {
   const targetPath = path.join(projectRoot, relativePath)
-
-  // Ensure target directory exists
   await fs.promises.mkdir(path.dirname(targetPath), { recursive: true })
-
-  // Restore from backup
   await fs.promises.copyFile(backupPath, targetPath)
 }
 
 /**
- * Lists all backup timestamps for a project.
+ * Lists all backup timestamps for a project pair.
  */
 export async function listBackups(
-  projectRoot: string,
-  backupDir = '.sync-backup'
+  p1Root: string,
+  p2Root: string,
+  backupSubDir = 'backup'
 ): Promise<string[]> {
-  const backupRoot = path.join(projectRoot, backupDir)
+  const dataDir = getProjectDataDir(p1Root, p2Root)
+  const backupRoot = path.join(dataDir, backupSubDir)
 
   try {
     const entries = await fs.promises.readdir(backupRoot)
-    return entries.sort().reverse() // newest first
+    return entries.sort().reverse()
   } catch {
     return []
   }

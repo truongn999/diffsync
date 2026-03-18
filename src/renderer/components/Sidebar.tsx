@@ -78,9 +78,12 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
 
   const handleSaveConfig = async () => {
     try {
-      if (p1Path) await window.electronAPI.saveConfig(p1Path, config)
-      if (p2Path) await window.electronAPI.saveConfig(p2Path, config)
-      addToast('Config saved', 'success')
+      if (p1Path && p2Path) {
+        await window.electronAPI.saveConfig(p1Path, p2Path, config)
+        addToast('Config saved', 'success')
+      } else {
+        addToast('Please select both project folders first', 'error')
+      }
     } catch {
       addToast('Failed to save config', 'error')
     }

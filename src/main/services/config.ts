@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import type { SyncConfig } from '../../shared/types'
+import { getProjectDataDir } from './dataDir'
 
 const DEFAULT_CONFIG: SyncConfig = {
   groups: [],
@@ -13,9 +14,6 @@ const DEFAULT_CONFIG: SyncConfig = {
     'release/**',
     '.next/**',
     '.nuxt/**',
-    '.sync-backup/**',
-    '.sync-manifest.json',
-    'sync.config.json',
     '.env*',
     '*.log',
     'package-lock.json',
@@ -25,25 +23,25 @@ const DEFAULT_CONFIG: SyncConfig = {
   extensions: [],
   backup: {
     enabled: true,
-    directory: '.sync-backup'
+    directory: 'backup'
   },
   selectedPaths: []
 }
 
-const CONFIG_FILENAME = 'sync.config.json'
+const CONFIG_FILENAME = 'config.json'
 
 /**
- * Loads sync.config.json from project root.
- * If not found, returns default config.
+ * Loads config from AppData for a project pair.
+ * Path: %APPDATA%/project-sync-tool/projects/<hash>/config.json
  */
-export async function loadConfig(projectRoot: string): Promise<SyncConfig> {
-  const configPath = path.join(projectRoot, CONFIG_FILENAME)
+export async function loadConfig(p1Root: string, p2Root: string): Promise<SyncConfig> {
+  const dataDir = getProjectDataDir(p1Root, p2Root)
+  const configPath = path.join(dataDir, CONFIG_FILENAME)
 
   try {
     const content = await fs.promises.readFile(configPath, 'utf-8')
     const parsed = JSON.parse(content)
 
-    // Merge with defaults to ensure all fields exist
     return {
       ...DEFAULT_CONFIG,
       ...parsed,
@@ -55,12 +53,13 @@ export async function loadConfig(projectRoot: string): Promise<SyncConfig> {
 }
 
 /**
- * Saves sync.config.json to project root.
+ * Saves config to AppData for a project pair.
  */
-export async function saveConfig(projectRoot: string, config: SyncConfig): Promise<void> {
-  const configPath = path.join(projectRoot, CONFIG_FILENAME)
-  const content = JSON.stringify(config, null, 2)
-  await fs.promises.writeFile(configPath, content, 'utf-8')
+export async function saveConfig(p1Root: string, p2Root: string, config: SyncConfig): Promise<void> {
+  const dataDir = getProjectDataDir(p1Root, p2Root)
+  await fs.promises.mkdir(dataDir, { recursive: true })
+  const configPath = path.join(dataDir, CONFIG_FILENAME)
+  await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8')
 }
 
 /**

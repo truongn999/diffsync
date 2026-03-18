@@ -33,7 +33,7 @@ export async function syncFiles(
       if (config.backup.enabled) {
         try {
           await fs.promises.access(targetPath)
-          const backupPath = await createBackup(targetRoot, relativePath, config.backup.directory)
+          const backupPath = await createBackup(params.p1Root, params.p2Root, targetRoot, relativePath, config.backup.directory)
           backupPaths.push(backupPath)
         } catch {
           // Target file doesn't exist yet, no backup needed

@@ -46,6 +46,9 @@ function createWindow(): void {
   }
 }
 
+// Set app name to ensure consistent userData path in dev and production
+app.setName('project-sync-tool')
+
 // Register IPC handlers before creating window
 app.whenReady().then(() => {
   registerIpcHandlers()
