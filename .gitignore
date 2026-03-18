@@ -26,8 +26,5 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Sync tool artifacts
-.sync-backup/
-.sync-manifest.json
-
-# Prototype demo artifacts (keep prototype source)
+# Docs (local only)
+docs/
