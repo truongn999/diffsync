@@ -4,7 +4,7 @@ import { app } from 'electron'
 
 /**
  * Returns the base data directory for the app:
- * %APPDATA%/project-sync-tool/
+ * %APPDATA%/diffsync/
  */
 export function getAppDataDir(): string {
   return app.getPath('userData')
@@ -21,7 +21,7 @@ export function getProjectPairHash(p1Path: string, p2Path: string): string {
 
 /**
  * Returns the data directory for a specific project pair:
- * %APPDATA%/project-sync-tool/projects/<hash>/
+ * %APPDATA%/diffsync/projects/<hash>/
  */
 export function getProjectDataDir(p1Path: string, p2Path: string): string {
   const hash = getProjectPairHash(p1Path, p2Path)

@@ -1,5 +1,5 @@
 {
-  "name": "project-sync-tool",
+  "name": "diffsync",
   "version": "1.0.0",
   "description": "A cross-platform desktop application for comparing and syncing code between two projects",
   "main": "./out/main/index.js",
@@ -37,8 +37,8 @@
     "vitest": "^2.1.8"
   },
   "build": {
-    "appId": "com.synctool.app",
-    "productName": "Project Sync Tool",
+    "appId": "com.diffsync.app",
+    "productName": "DiffSync",
     "copyright": "Copyright © 2026",
     "asar": true,
     "directories": {
@@ -69,7 +69,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Project Sync Tool"
+      "shortcutName": "DiffSync"
     },
     "mac": {
       "target": [

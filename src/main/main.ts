@@ -9,7 +9,7 @@ function createWindow(): void {
     height: 800,
     minWidth: 1024,
     minHeight: 600,
-    title: 'Project Sync Tool',
+    title: 'DiffSync',
     frame: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
@@ -47,7 +47,7 @@ function createWindow(): void {
 }
 
 // Set app name to ensure consistent userData path in dev and production
-app.setName('project-sync-tool')
+app.setName('diffsync')
 
 // Register IPC handlers before creating window
 app.whenReady().then(() => {

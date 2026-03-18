@@ -6,7 +6,7 @@ export default function StatusBar() {
   return (
     <footer className="status-bar">
       <div className="status-bar__left">
-        <span>⚡ Project Sync Tool</span>
+        <span>⚡ DiffSync</span>
         <span>v1.0.0</span>
       </div>
       <div className="status-bar__right">

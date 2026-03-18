@@ -32,7 +32,7 @@ const CONFIG_FILENAME = 'config.json'
 
 /**
  * Loads config from AppData for a project pair.
- * Path: %APPDATA%/project-sync-tool/projects/<hash>/config.json
+ * Path: %APPDATA%/diffsync/projects/<hash>/config.json
  */
 export async function loadConfig(p1Root: string, p2Root: string): Promise<SyncConfig> {
   const dataDir = getProjectDataDir(p1Root, p2Root)

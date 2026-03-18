@@ -7,7 +7,7 @@ const MANIFEST_FILENAME = 'manifest.json'
 
 /**
  * Loads the sync manifest from AppData for a project pair.
- * Path: %APPDATA%/project-sync-tool/projects/<hash>/manifest.json
+ * Path: %APPDATA%/diffsync/projects/<hash>/manifest.json
  */
 export async function loadManifest(p1Root: string, p2Root: string): Promise<Manifest> {
   const dataDir = getProjectDataDir(p1Root, p2Root)

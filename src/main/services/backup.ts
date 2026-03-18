@@ -4,7 +4,7 @@ import { getProjectDataDir } from './dataDir'
 
 /**
  * Creates a timestamped backup of a file before overwrite.
- * Backup stored at: %APPDATA%/project-sync-tool/projects/<hash>/backup/<timestamp>/<relativePath>
+ * Backup stored at: %APPDATA%/diffsync/projects/<hash>/backup/<timestamp>/<relativePath>
  */
 export async function createBackup(
   p1Root: string,

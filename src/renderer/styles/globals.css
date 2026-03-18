@@ -31,15 +31,15 @@
 
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --text-muted: #484f58;
+  --text-muted: #7b848d;
 
   --border-primary: #30363d;
   --border-secondary: #21262d;
   --border: #30363d;
 
-  --accent: #58a6ff;
+  --accent: #4b9fff;
   --accent-hover: #79b8ff;
-  --accent-bg: rgba(56, 139, 253, 0.1);
+  --accent-bg: rgba(56, 139, 253, 0.2);
 
   --color-modified: #e3b341;
   --color-only-p1: #3fb950;
@@ -424,7 +424,7 @@ html, body, #root {
 
 .view-toggle { display: flex; gap: 2px; }
 .view-toggle__btn {
-  padding: 4px 6px;
+  padding: 4px 6px 2px 6px;
   border: 1px solid var(--border-primary);
   background: transparent;
   color: var(--text-muted);
@@ -433,7 +433,7 @@ html, body, #root {
 }
 .view-toggle__btn:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
 .view-toggle__btn:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-.view-toggle__btn--active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.view-toggle__btn--active { background: var(--accent-bg); color: var(--accent); }
 .view-toggle__btn svg { width: 14px; height: 14px; }
 
 /* ═══════════════════════════════════════════════ */
