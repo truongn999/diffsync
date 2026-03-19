@@ -135,6 +135,7 @@ export interface ElectronAPI {
   loadTheme(): Promise<'light' | 'dark'>
   saveTheme(theme: 'light' | 'dark'): Promise<void>
   setTitleBarTheme(theme: 'light' | 'dark'): void
+  platform: string
 }
 
 declare global {

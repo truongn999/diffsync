@@ -979,6 +979,9 @@ html, body, #root {
 .titlebar__btn:hover { background: var(--bg-hover); }
 .titlebar__btn--close:hover { background: #da3633; color: white; }
 
+/* macOS: extra left padding for traffic light buttons */
+.titlebar--mac { padding-left: 80px; }
+
 /* ═══════════════════════════════════════════════ */
 /* TOOLBAR GROUP & SEPARATOR                       */
 /* ═══════════════════════════════════════════════ */

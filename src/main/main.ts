@@ -3,6 +3,8 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc/handlers'
 
+const isMac = process.platform === 'darwin'
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1400,
@@ -12,11 +14,17 @@ function createWindow(): void {
     title: 'DiffSync',
     frame: false,
     titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      color: '#0d1117',
-      symbolColor: '#8b949e',
-      height: 38
-    },
+    // Windows: native minimize/maximize/close overlay
+    // macOS: traffic lights are shown automatically by titleBarStyle: 'hidden'
+    ...(isMac
+      ? { trafficLightPosition: { x: 12, y: 12 } }
+      : {
+          titleBarOverlay: {
+            color: '#161b22',
+            symbolColor: '#8b949e',
+            height: 38
+          }
+        }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -32,13 +40,20 @@ function createWindow(): void {
     mainWindow.show()
   })
 
-  // Update titlebar overlay when theme changes
-  ipcMain.on('set-titlebar-theme', (_event, theme: string) => {
-    const isDark = theme === 'dark'
-    mainWindow.setTitleBarOverlay({
-      color: isDark ? '#161b22' : '#f6f8fa',
-      symbolColor: isDark ? '#8b949e' : '#656d76'
+  // Update titlebar overlay when theme changes (Windows only)
+  if (!isMac) {
+    ipcMain.on('set-titlebar-theme', (_event, theme: string) => {
+      const isDark = theme === 'dark'
+      mainWindow.setTitleBarOverlay({
+        color: isDark ? '#161b22' : '#f6f8fa',
+        symbolColor: isDark ? '#8b949e' : '#656d76'
+      })
     })
+  }
+
+  // Send platform info to renderer
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('platform-info', { isMac })
   })
 
   // Open external links in browser
