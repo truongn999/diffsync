@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import { IPC } from '../../shared/ipc-channels'
 
 let watcher: any = null
 let debounceTimer: NodeJS.Timeout | null = null
@@ -27,7 +28,7 @@ export async function startWatching(
     ignored: [/(^|[\/\\])\.\./, ...ignored, '**/node_modules/**'],
     persistent: true,
     ignoreInitial: true,
-    depth: 10,
+    depth: 20,
     awaitWriteFinish: {
       stabilityThreshold: 300,
       pollInterval: 100
@@ -38,7 +39,7 @@ export async function startWatching(
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('files-changed')
+        mainWindow.webContents.send(IPC.FILES_CHANGED)
       }
     }, DEBOUNCE_MS)
   }

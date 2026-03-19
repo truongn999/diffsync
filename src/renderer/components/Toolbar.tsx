@@ -85,13 +85,29 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
         addToast('Select both projects first', 'error')
         return
       }
-      await window.electronAPI.startWatching(p1Path, p2Path, config.ignore)
-      cleanupRef.current = window.electronAPI.onFilesChanged(() => {
-        // Auto re-compare on file change
-        handleCompare()
-      })
-      setIsWatching(true)
-      addToast('Watching for file changes...', 'success')
+      try {
+        await window.electronAPI.startWatching(p1Path, p2Path, config.ignore)
+        cleanupRef.current = window.electronAPI.onFilesChanged(async () => {
+          // Use getState() to always read fresh state, avoiding stale closures
+          const state = useAppStore.getState()
+          const { p1Path: currentP1, p2Path: currentP2, config: currentConfig } = state
+          if (!currentP1 || !currentP2) return
+          state.setIsComparing(true)
+          try {
+            const result = await window.electronAPI.compareProjects(currentP1, currentP2, currentConfig)
+            useAppStore.getState().setCompareResult(result)
+            useAppStore.getState().addToast(`Auto-refreshed: ${result.stats.total} files`, 'info')
+          } catch (err) {
+            useAppStore.getState().addToast(`Auto-refresh failed: ${err}`, 'error')
+          } finally {
+            useAppStore.getState().setIsComparing(false)
+          }
+        })
+        setIsWatching(true)
+        addToast('Watching for file changes...', 'success')
+      } catch (err) {
+        addToast(`Failed to start watcher: ${err}`, 'error')
+      }
     }
   }
 

@@ -136,7 +136,10 @@ export interface ElectronAPI {
   saveTheme(theme: 'light' | 'dark'): Promise<void>
   setTitleBarTheme(theme: 'light' | 'dark'): void
   platform: string
+  resolveConflict(p1Root: string, p2Root: string, relativePath: string, action: ResolveAction): Promise<void>
 }
+
+export type ResolveAction = 'keep_p1' | 'keep_p2' | 'mark_resolved'
 
 declare global {
   interface Window {

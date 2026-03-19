@@ -10,7 +10,7 @@ import { syncFiles } from '../services/syncer'
 import { loadConfig, saveConfig } from '../services/config'
 import { loadHistory, addHistoryEntry, removeHistoryEntry } from '../services/history'
 import { loadManifest, updateManifestAfterSync } from '../services/manifest'
-import { restoreBackup } from '../services/backup'
+import { restoreBackup, createBackup } from '../services/backup'
 import { loadRecentProjects, addRecentProject, removeRecentProject } from '../services/recentProjects'
 import { startWatching, stopWatching } from '../services/watcher'
 import { generateReport } from '../services/reportGenerator'
@@ -152,8 +152,8 @@ export function registerIpcHandlers(): void {
   })
 
   // ─── File Watcher ─────────────────────────────
-  ipcMain.handle(IPC.START_WATCHING, async (_event, p1Path: string, p2Path: string, ignore: string[]) => {
-    const win = BrowserWindow.getFocusedWindow()
+  ipcMain.handle(IPC.START_WATCHING, async (event, p1Path: string, p2Path: string, ignore: string[]) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
     if (win) startWatching(p1Path, p2Path, ignore, win)
   })
 
@@ -194,4 +194,33 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.SAVE_THEME, async (_event, theme: string) => {
     await fs.promises.writeFile(themePath, JSON.stringify({ theme }), 'utf-8')
   })
+
+  // ─── Resolve Conflict ───────────────────────
+  ipcMain.handle(IPC.RESOLVE_CONFLICT, async (_event, p1Root: string, p2Root: string, relativePath: string, action: string) => {
+    const p1File = path.join(p1Root, relativePath)
+    const p2File = path.join(p2Root, relativePath)
+
+    if (action === 'keep_p1') {
+      // Backup P2, then copy P1 → P2
+      await createBackup(p1Root, p2Root, p2Root, relativePath, 'backup')
+      await fs.promises.copyFile(p1File, p2File)
+    } else if (action === 'keep_p2') {
+      // Backup P1, then copy P2 → P1
+      await createBackup(p1Root, p2Root, p1Root, relativePath, 'backup')
+      await fs.promises.copyFile(p2File, p1File)
+    }
+    // For all actions (including 'mark_resolved'): update manifest
+    const p1Hash = await getFileHash(p1File)
+    const p2Hash = await getFileHash(p2File)
+    await updateManifestAfterSync(p1Root, p2Root, [relativePath],
+      new Map([[relativePath, p1Hash]]),
+      new Map([[relativePath, p2Hash]])
+    )
+  })
+}
+
+async function getFileHash(filePath: string): Promise<string> {
+  const crypto = await import('crypto')
+  const content = await fs.promises.readFile(filePath)
+  return crypto.createHash('md5').update(content).digest('hex')
 }

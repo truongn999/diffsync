@@ -28,92 +28,173 @@ describe('Comparator Service', () => {
     result = compareFiles(p1Files, p2Files)
   })
 
-  it('should report correct total file count', () => {
-    // project-a has: utils.ts, hooks/useAuth.ts, constants.ts
-    // project-b has: utils.ts, hooks/useAuth.ts, helpers/debounce.ts
-    // Union: utils.ts, hooks/useAuth.ts, constants.ts, helpers/debounce.ts = 4
-    expect(result.stats.total).toBe(4)
+  // ─────────────────────────────────────────────────────────
+  // Basic Comparison
+  // ─────────────────────────────────────────────────────────
+  describe('Basic comparison', () => {
+    it('should report correct total file count (union of both projects)', () => {
+      // P1: utils.ts, hooks/useAuth.ts, constants.ts
+      // P2: utils.ts, hooks/useAuth.ts, helpers/debounce.ts
+      // Union = 4 unique files
+      expect(result.stats.total).toBe(4)
+    })
+
+    it('should identify identical files as "same"', () => {
+      const same = result.items.find(i => i.relativePath === 'src/utils.ts')
+      expect(same).toBeDefined()
+      expect(same!.status).toBe('same')
+      expect(same!.p1).not.toBeNull()
+      expect(same!.p2).not.toBeNull()
+      expect(same!.p1!.hash).toBe(same!.p2!.hash)
+    })
+
+    it('should identify files with different content as "modified"', () => {
+      const modified = result.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')
+      expect(modified).toBeDefined()
+      expect(modified!.status).toBe('modified')
+      expect(modified!.p1!.hash).not.toBe(modified!.p2!.hash)
+    })
+
+    it('should identify files only in P1 as "only_in_p1"', () => {
+      const onlyP1 = result.items.find(i => i.relativePath === 'src/constants.ts')
+      expect(onlyP1).toBeDefined()
+      expect(onlyP1!.status).toBe('only_in_p1')
+      expect(onlyP1!.p1).not.toBeNull()
+      expect(onlyP1!.p2).toBeNull()
+    })
+
+    it('should identify files only in P2 as "only_in_p2"', () => {
+      const onlyP2 = result.items.find(i => i.relativePath === 'src/helpers/debounce.ts')
+      expect(onlyP2).toBeDefined()
+      expect(onlyP2!.status).toBe('only_in_p2')
+      expect(onlyP2!.p1).toBeNull()
+      expect(onlyP2!.p2).not.toBeNull()
+    })
+
+    it('should have correct stats breakdown', () => {
+      expect(result.stats.same).toBe(1)
+      expect(result.stats.modified).toBe(1)
+      expect(result.stats.only_in_p1).toBe(1)
+      expect(result.stats.only_in_p2).toBe(1)
+      expect(result.stats.conflict).toBe(0)
+    })
+
+    it('stats total should equal sum of all statuses', () => {
+      const { stats } = result
+      expect(stats.total).toBe(
+        stats.same + stats.modified + stats.only_in_p1 + stats.only_in_p2 + stats.conflict
+      )
+    })
   })
 
-  it('should identify identical files as same', () => {
-    const same = result.items.find(i => i.relativePath === 'src/utils.ts')
-    expect(same).toBeDefined()
-    expect(same!.status).toBe('same')
+  // ─────────────────────────────────────────────────────────
+  // Sorting
+  // ─────────────────────────────────────────────────────────
+  describe('Result ordering', () => {
+    it('should sort items: conflict → modified → only_in_p1 → only_in_p2 → same', () => {
+      const statusOrder: Record<string, number> = {
+        conflict: 0, modified: 1, only_in_p1: 2, only_in_p2: 3, same: 4
+      }
+      for (let i = 1; i < result.items.length; i++) {
+        expect(statusOrder[result.items[i].status])
+          .toBeGreaterThanOrEqual(statusOrder[result.items[i - 1].status])
+      }
+    })
   })
 
-  it('should identify files with different hashes as modified', () => {
-    const modified = result.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')
-    expect(modified).toBeDefined()
-    expect(modified!.status).toBe('modified')
-  })
-
-  it('should identify files only in P1', () => {
-    const onlyP1 = result.items.find(i => i.relativePath === 'src/constants.ts')
-    expect(onlyP1).toBeDefined()
-    expect(onlyP1!.status).toBe('only_in_p1')
-    expect(onlyP1!.p1).not.toBeNull()
-    expect(onlyP1!.p2).toBeNull()
-  })
-
-  it('should identify files only in P2', () => {
-    const onlyP2 = result.items.find(i => i.relativePath === 'src/helpers/debounce.ts')
-    expect(onlyP2).toBeDefined()
-    expect(onlyP2!.status).toBe('only_in_p2')
-    expect(onlyP2!.p1).toBeNull()
-    expect(onlyP2!.p2).not.toBeNull()
-  })
-
-  it('should have correct stats breakdown', () => {
-    expect(result.stats.same).toBe(1)       // utils.ts
-    expect(result.stats.modified).toBe(1)    // useAuth.ts
-    expect(result.stats.only_in_p1).toBe(1)  // constants.ts
-    expect(result.stats.only_in_p2).toBe(1)  // debounce.ts
-    expect(result.stats.conflict).toBe(0)
-  })
-
-  it('should sort items with conflicts/modified first, same last', () => {
-    const statuses = result.items.map(i => i.status)
-    const orderMap: Record<string, number> = { conflict: 0, modified: 1, only_in_p1: 2, only_in_p2: 3, same: 4 }
-    for (let i = 1; i < statuses.length; i++) {
-      expect(orderMap[statuses[i]]).toBeGreaterThanOrEqual(orderMap[statuses[i - 1]])
-    }
-  })
-
+  // ─────────────────────────────────────────────────────────
+  // Conflict Detection
+  // ─────────────────────────────────────────────────────────
   describe('Conflict detection with manifest', () => {
-    it('should detect conflict when both sides changed since last sync', () => {
+    it('should detect conflict when both P1 and P2 changed since last sync', () => {
       const manifest: Manifest = {
         files: {
           'src/hooks/useAuth.ts': {
-            lastSyncHashP1: 'old-hash-p1',
-            lastSyncHashP2: 'old-hash-p2'
+            lastSyncHashP1: 'stale-hash-p1',
+            lastSyncHashP2: 'stale-hash-p2'
           }
         }
       }
-      const resultWithManifest = compareFiles(p1Files, p2Files, manifest)
-      const file = resultWithManifest.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')
-      expect(file!.status).toBe('conflict')
-      expect(resultWithManifest.stats.conflict).toBe(1)
+      const r = compareFiles(p1Files, p2Files, manifest)
+      const file = r.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')!
+      expect(file.status).toBe('conflict')
+      expect(r.stats.conflict).toBe(1)
     })
 
-    it('should not detect conflict when only one side changed', () => {
+    it('should NOT detect conflict when only P1 changed (P2 hash matches manifest)', () => {
+      const p2Hash = p2Files.get('src/hooks/useAuth.ts')!.hash
+      const manifest: Manifest = {
+        files: {
+          'src/hooks/useAuth.ts': {
+            lastSyncHashP1: 'stale-hash',
+            lastSyncHashP2: p2Hash  // P2 unchanged since last sync
+          }
+        }
+      }
+      const r = compareFiles(p1Files, p2Files, manifest)
+      const file = r.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')!
+      expect(file.status).toBe('modified')
+    })
+
+    it('should NOT detect conflict when only P2 changed (P1 hash matches manifest)', () => {
       const p1Hash = p1Files.get('src/hooks/useAuth.ts')!.hash
       const manifest: Manifest = {
         files: {
           'src/hooks/useAuth.ts': {
-            lastSyncHashP1: p1Hash,         // P1 unchanged
-            lastSyncHashP2: 'old-hash-p2'   // P2 changed
+            lastSyncHashP1: p1Hash,  // P1 unchanged since last sync
+            lastSyncHashP2: 'stale-hash'
           }
         }
       }
-      const resultWithManifest = compareFiles(p1Files, p2Files, manifest)
-      const file = resultWithManifest.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')
-      expect(file!.status).toBe('modified')
+      const r = compareFiles(p1Files, p2Files, manifest)
+      const file = r.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')!
+      expect(file.status).toBe('modified')
     })
 
-    it('should treat as modified when no manifest exists', () => {
-      const noManifest = compareFiles(p1Files, p2Files)
-      const file = noManifest.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')
-      expect(file!.status).toBe('modified')
+    it('should treat as "modified" when no manifest exists', () => {
+      const r = compareFiles(p1Files, p2Files)
+      const file = r.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')!
+      expect(file.status).toBe('modified')
+    })
+
+    it('should treat as "modified" when file is not in manifest', () => {
+      const manifest: Manifest = { files: {} }
+      const r = compareFiles(p1Files, p2Files, manifest)
+      const file = r.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')!
+      expect(file.status).toBe('modified')
+    })
+  })
+
+  // ─────────────────────────────────────────────────────────
+  // Edge Cases
+  // ─────────────────────────────────────────────────────────
+  describe('Edge cases', () => {
+    it('should return empty result when both projects are empty', () => {
+      const r = compareFiles(new Map(), new Map())
+      expect(r.stats.total).toBe(0)
+      expect(r.items).toHaveLength(0)
+    })
+
+    it('should mark all files as only_in_p1 when P2 is empty', () => {
+      const r = compareFiles(p1Files, new Map())
+      expect(r.stats.only_in_p1).toBe(p1Files.size)
+      expect(r.stats.same).toBe(0)
+      expect(r.stats.modified).toBe(0)
+    })
+
+    it('should mark all files as only_in_p2 when P1 is empty', () => {
+      const r = compareFiles(new Map(), p2Files)
+      expect(r.stats.only_in_p2).toBe(p2Files.size)
+      expect(r.stats.same).toBe(0)
+      expect(r.stats.modified).toBe(0)
+    })
+
+    it('should compare identical projects as all "same"', () => {
+      const r = compareFiles(p1Files, p1Files)
+      expect(r.stats.same).toBe(p1Files.size)
+      expect(r.stats.modified).toBe(0)
+      expect(r.stats.only_in_p1).toBe(0)
+      expect(r.stats.only_in_p2).toBe(0)
     })
   })
 })

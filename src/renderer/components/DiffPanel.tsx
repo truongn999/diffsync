@@ -1,6 +1,7 @@
 import { useAppStore } from '../store/useAppStore'
 import { useEffect, useState, useRef } from 'react'
 import { DiffEditor } from '@monaco-editor/react'
+import type { ResolveAction } from '../../shared/types'
 
 // Map file extensions to Monaco language IDs
 function getLanguage(filePath: string): string {
@@ -23,10 +24,11 @@ function getLanguage(filePath: string): string {
 }
 
 export default function DiffPanel() {
-  const { activeFile, isDiffLoading, p1Path, p2Path, theme } = useAppStore()
+  const { activeFile, isDiffLoading, p1Path, p2Path, theme, addToast, config, setCompareResult, setIsComparing } = useAppStore()
   const [p1Content, setP1Content] = useState('')
   const [p2Content, setP2Content] = useState('')
   const [isInline, setIsInline] = useState(false)
+  const [isResolving, setIsResolving] = useState(false)
 
   const diffEditorRef = useRef<any>(null)
   const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light'
@@ -60,6 +62,25 @@ export default function DiffPanel() {
 
     loadContent()
   }, [activeFile, p1Path, p2Path])
+
+  const handleResolve = async (action: ResolveAction) => {
+    if (!activeFile || !p1Path || !p2Path) return
+    setIsResolving(true)
+    try {
+      await window.electronAPI.resolveConflict(p1Path, p2Path, activeFile.relativePath, action)
+      const labels = { keep_p1: 'Kept P1', keep_p2: 'Kept P2', mark_resolved: 'Marked resolved' }
+      addToast(`Conflict resolved: ${labels[action]}`, 'success')
+      // Re-compare to refresh file list
+      setIsComparing(true)
+      const result = await window.electronAPI.compareProjects(p1Path, p2Path, config)
+      setCompareResult(result)
+    } catch (err) {
+      addToast(`Resolve failed: ${err}`, 'error')
+    } finally {
+      setIsResolving(false)
+      setIsComparing(false)
+    }
+  }
 
   if (!activeFile) {
     return (
@@ -101,6 +122,7 @@ export default function DiffPanel() {
   }
 
   const language = getLanguage(activeFile.relativePath)
+  const isConflict = activeFile.status === 'conflict'
 
   return (
     <div className="diff-panel">
@@ -120,6 +142,29 @@ export default function DiffPanel() {
           </button>
         </div>
       </div>
+
+      {isConflict && (
+        <div className="resolve-bar">
+          <div className="resolve-bar__label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Both sides changed — resolve conflict:
+          </div>
+          <div className="resolve-bar__actions">
+            <button className="btn btn--xs btn--primary" onClick={() => handleResolve('keep_p1')} disabled={isResolving}>
+              Keep P1
+            </button>
+            <button className="btn btn--xs btn--primary" onClick={() => handleResolve('keep_p2')} disabled={isResolving}>
+              Keep P2
+            </button>
+            <button className="btn btn--xs btn--ghost" onClick={() => handleResolve('mark_resolved')} disabled={isResolving}>
+              Mark Resolved
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="diff-panel__monaco">
         <DiffEditor

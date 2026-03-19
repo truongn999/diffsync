@@ -21,7 +21,9 @@ export const IPC = {
   EXPORT_REPORT: 'sync:export-report',
   LOAD_THEME: 'sync:load-theme',
   SAVE_THEME: 'sync:save-theme',
+  RESOLVE_CONFLICT: 'sync:resolve-conflict',
 
   // Events (main → renderer)
   SYNC_PROGRESS: 'sync:progress',
+  FILES_CHANGED: 'sync:files-changed',
 } as const

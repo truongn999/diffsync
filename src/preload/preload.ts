@@ -46,8 +46,8 @@ const api: ElectronAPI = {
 
   onFilesChanged: (callback: () => void) => {
     const handler = () => callback()
-    ipcRenderer.on('files-changed', handler)
-    return () => { ipcRenderer.removeListener('files-changed', handler) }
+    ipcRenderer.on(IPC.FILES_CHANGED, handler)
+    return () => { ipcRenderer.removeListener(IPC.FILES_CHANGED, handler) }
   },
 
   exportReport: (p1Path: string, p2Path: string, compareResult: any) =>
@@ -56,7 +56,9 @@ const api: ElectronAPI = {
   loadTheme: () => ipcRenderer.invoke(IPC.LOAD_THEME),
   saveTheme: (theme: string) => ipcRenderer.invoke(IPC.SAVE_THEME, theme),
   setTitleBarTheme: (theme: string) => ipcRenderer.send('set-titlebar-theme', theme),
-  platform: process.platform
+  platform: process.platform,
+  resolveConflict: (p1Root: string, p2Root: string, relativePath: string, action: string) =>
+    ipcRenderer.invoke(IPC.RESOLVE_CONFLICT, p1Root, p2Root, relativePath, action)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)
