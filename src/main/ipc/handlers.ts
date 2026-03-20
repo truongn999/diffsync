@@ -169,6 +169,23 @@ export function registerIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle(IPC.GET_FILE_BASE64, async (_event, rootPath: string, relativePath: string) => {
+    const fullPath = path.join(rootPath, relativePath)
+    try {
+      const buffer = await fs.promises.readFile(fullPath)
+      const ext = path.extname(relativePath).slice(1).toLowerCase()
+      const mimeMap: Record<string, string> = {
+        png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+        gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp',
+        ico: 'image/x-icon', bmp: 'image/bmp', avif: 'image/avif'
+      }
+      const mime = mimeMap[ext] || 'application/octet-stream'
+      return `data:${mime};base64,${buffer.toString('base64')}`
+    } catch {
+      return ''
+    }
+  })
+
   // ─── File Watcher ─────────────────────────────
   ipcMain.handle(IPC.START_WATCHING, async (event, p1Path: string, p2Path: string, ignore: string[]) => {
     const win = BrowserWindow.fromWebContents(event.sender)

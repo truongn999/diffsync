@@ -130,6 +130,7 @@ export interface ElectronAPI {
   addRecentProject(p1Path: string, p2Path: string): Promise<RecentProject[]>
   removeRecentProject(id: number): Promise<RecentProject[]>
   getFileContent(rootPath: string, relativePath: string): Promise<string>
+  getFileBase64(rootPath: string, relativePath: string): Promise<string>
   startWatching(p1Path: string, p2Path: string, ignore: string[]): Promise<void>
   stopWatching(): Promise<void>
   onFilesChanged(callback: () => void): () => void

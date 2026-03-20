@@ -23,12 +23,27 @@ function getLanguage(filePath: string): string {
   return map[ext] || 'plaintext'
 }
 
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp', 'avif'])
+
+function isImageFile(filePath: string): boolean {
+  const ext = filePath.split('.').pop()?.toLowerCase() || ''
+  return IMAGE_EXTENSIONS.has(ext)
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function DiffPanel() {
   const { activeFile, isDiffLoading, p1Path, p2Path, theme, addToast, config, setCompareResult, setIsComparing } = useAppStore()
   const [p1Content, setP1Content] = useState('')
   const [p2Content, setP2Content] = useState('')
   const [isInline, setIsInline] = useState(false)
   const [isResolving, setIsResolving] = useState(false)
+  const [p1ImageData, setP1ImageData] = useState<string | null>(null)
+  const [p2ImageData, setP2ImageData] = useState<string | null>(null)
 
   const diffEditorRef = useRef<any>(null)
   const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light'
@@ -44,23 +59,43 @@ export default function DiffPanel() {
     if (!activeFile || activeFile.status === 'same') {
       setP1Content('')
       setP2Content('')
+      setP1ImageData(null)
+      setP2ImageData(null)
       return
     }
 
-    const loadContent = async () => {
-      const [c1, c2] = await Promise.all([
-        activeFile.p1 && p1Path
-          ? window.electronAPI.getFileContent(p1Path, activeFile.relativePath)
-          : Promise.resolve(''),
-        activeFile.p2 && p2Path
-          ? window.electronAPI.getFileContent(p2Path, activeFile.relativePath)
-          : Promise.resolve('')
-      ])
-      setP1Content(c1)
-      setP2Content(c2)
+    if (isImageFile(activeFile.relativePath)) {
+      // Load binary images as base64
+      const loadImages = async () => {
+        const [img1, img2] = await Promise.all([
+          activeFile.p1 && p1Path
+            ? window.electronAPI.getFileBase64(p1Path, activeFile.relativePath)
+            : Promise.resolve(''),
+          activeFile.p2 && p2Path
+            ? window.electronAPI.getFileBase64(p2Path, activeFile.relativePath)
+            : Promise.resolve('')
+        ])
+        setP1ImageData(img1 || null)
+        setP2ImageData(img2 || null)
+      }
+      loadImages()
+    } else {
+      setP1ImageData(null)
+      setP2ImageData(null)
+      const loadContent = async () => {
+        const [c1, c2] = await Promise.all([
+          activeFile.p1 && p1Path
+            ? window.electronAPI.getFileContent(p1Path, activeFile.relativePath)
+            : Promise.resolve(''),
+          activeFile.p2 && p2Path
+            ? window.electronAPI.getFileContent(p2Path, activeFile.relativePath)
+            : Promise.resolve('')
+        ])
+        setP1Content(c1)
+        setP2Content(c2)
+      }
+      loadContent()
     }
-
-    loadContent()
   }, [activeFile, p1Path, p2Path])
 
   const handleResolve = async (action: ResolveAction) => {
@@ -123,6 +158,7 @@ export default function DiffPanel() {
 
   const language = getLanguage(activeFile.relativePath)
   const isConflict = activeFile.status === 'conflict'
+  const isBinary = isImageFile(activeFile.relativePath)
 
   return (
     <div className="diff-panel">
@@ -133,13 +169,15 @@ export default function DiffPanel() {
             <span className="status-badge__dot" />
             {activeFile.status.replace('_', ' ').toUpperCase()}
           </span>
-          <button
-            className={`btn btn--xs ${isInline ? 'btn--primary' : 'btn--ghost'}`}
-            onClick={() => setIsInline(!isInline)}
-            title={isInline ? 'Switch to side-by-side' : 'Switch to inline diff'}
-          >
-            {isInline ? '⇆ Side-by-side' : '≡ Inline'}
-          </button>
+          {!isBinary && (
+            <button
+              className={`btn btn--xs ${isInline ? 'btn--primary' : 'btn--ghost'}`}
+              onClick={() => setIsInline(!isInline)}
+              title={isInline ? 'Switch to side-by-side' : 'Switch to inline diff'}
+            >
+              {isInline ? '⇆ Side-by-side' : '≡ Inline'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -166,30 +204,55 @@ export default function DiffPanel() {
         </div>
       )}
 
-      <div className="diff-panel__monaco">
-        <DiffEditor
-          key={`diff-${isInline ? 'inline' : 'sbs'}-${theme}`}
-          original={p1Content}
-          modified={p2Content}
-          language={language}
-          theme={monacoTheme}
-          onMount={(editor) => { diffEditorRef.current = editor }}
-          options={{
-            readOnly: true,
-            renderSideBySide: !isInline,
-            useInlineViewWhenSpaceIsLimited: false,
-            minimap: { enabled: !isInline },
-            fontSize: 12,
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            wordWrap: 'off',
-            automaticLayout: true,
-            renderOverviewRuler: true,
-            diffWordWrap: 'off',
-            originalEditable: false,
-          }}
-        />
-      </div>
+      {isBinary ? (
+        <div className="binary-preview">
+          <div className="binary-preview__side">
+            <div className="binary-preview__label">
+              P1 {activeFile.p1 ? `(${formatBytes(activeFile.p1.size)})` : '—'}
+            </div>
+            {p1ImageData ? (
+              <img src={p1ImageData} className="binary-preview__img" alt="P1" />
+            ) : (
+              <div className="binary-preview__empty">File not in P1</div>
+            )}
+          </div>
+          <div className="binary-preview__side">
+            <div className="binary-preview__label">
+              P2 {activeFile.p2 ? `(${formatBytes(activeFile.p2.size)})` : '—'}
+            </div>
+            {p2ImageData ? (
+              <img src={p2ImageData} className="binary-preview__img" alt="P2" />
+            ) : (
+              <div className="binary-preview__empty">File not in P2</div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="diff-panel__monaco">
+          <DiffEditor
+            key={`diff-${isInline ? 'inline' : 'sbs'}-${theme}`}
+            original={p1Content}
+            modified={p2Content}
+            language={language}
+            theme={monacoTheme}
+            onMount={(editor) => { diffEditorRef.current = editor }}
+            options={{
+              readOnly: true,
+              renderSideBySide: !isInline,
+              useInlineViewWhenSpaceIsLimited: false,
+              minimap: { enabled: !isInline },
+              fontSize: 12,
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'off',
+              automaticLayout: true,
+              renderOverviewRuler: true,
+              diffWordWrap: 'off',
+              originalEditable: false,
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

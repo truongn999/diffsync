@@ -16,6 +16,7 @@ export const IPC = {
   ADD_RECENT_PROJECT: 'sync:add-recent-project',
   REMOVE_RECENT_PROJECT: 'sync:remove-recent-project',
   GET_FILE_CONTENT: 'sync:get-file-content',
+  GET_FILE_BASE64: 'sync:get-file-base64',
   START_WATCHING: 'sync:start-watching',
   STOP_WATCHING: 'sync:stop-watching',
   EXPORT_REPORT: 'sync:export-report',

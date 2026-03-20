@@ -38,6 +38,9 @@ const api: ElectronAPI = {
   getFileContent: (rootPath: string, relativePath: string) =>
     ipcRenderer.invoke(IPC.GET_FILE_CONTENT, rootPath, relativePath),
 
+  getFileBase64: (rootPath: string, relativePath: string) =>
+    ipcRenderer.invoke(IPC.GET_FILE_BASE64, rootPath, relativePath),
+
   startWatching: (p1Path: string, p2Path: string, ignore: string[]) =>
     ipcRenderer.invoke(IPC.START_WATCHING, p1Path, p2Path, ignore),
 
