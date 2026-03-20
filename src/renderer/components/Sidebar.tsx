@@ -13,7 +13,7 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
     compareResult, config, setConfig, addToast, syncHistory, setSyncHistory,
     projectLoaded, scopeSelectedPaths, allScannedFiles,
     isScanning, setIsScanning, setProjectLoaded, setAllScannedFiles,
-    setScopeSelectedPaths
+    setScopeSelectedPaths, setIsComparing, setCompareResult
   } = useAppStore()
 
   const [configText, setConfigText] = useState(JSON.stringify(config, null, 2))
@@ -79,8 +79,23 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
   const handleSaveConfig = async () => {
     try {
       if (p1Path && p2Path) {
+
         await window.electronAPI.saveConfig(p1Path, p2Path, config)
         addToast('Config saved', 'success')
+        // Auto re-compare if a comparison already exists
+        if (compareResult) {
+          setIsComparing(true)
+          try {
+            // Reload config from disk to ensure compare uses the latest saved config
+            const freshConfig = await window.electronAPI.loadConfig(p1Path, p2Path)
+            setConfig(freshConfig)
+            const result = await window.electronAPI.compareProjects(p1Path, p2Path, freshConfig)
+            setCompareResult(result)
+            addToast(`Re-compared ${result.stats.total} files`, 'info')
+          } finally {
+            setIsComparing(false)
+          }
+        }
       } else {
         addToast('Please select both project folders first', 'error')
       }
@@ -220,7 +235,18 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
                     </div>
                     <button className="recent-item__delete" title="Remove" onClick={(e) => {
                       e.stopPropagation()
-                      window.electronAPI.removeRecentProject(rp.id).then(setRecentProjects)
+                      if (confirm(`Remove "${rp.name}" from recent projects?`)) {
+                        window.electronAPI.removeRecentProject(rp.id).then(setRecentProjects)
+                        // Reset paths if the removed project is currently loaded
+                        if (p1Path === rp.p1Path && p2Path === rp.p2Path) {
+                          setP1Path('')
+                          setP2Path('')
+                          setCompareResult(null)
+                          useAppStore.getState().setActiveFile(null)
+                          useAppStore.getState().setDiffResult(null)
+                          addToast('Active project removed, paths reset', 'info')
+                        }
+                      }
                     }}>×</button>
                   </div>
                 ))
@@ -239,6 +265,9 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 01.2 12.52M5.64 17.36a9 9 0 01-.2-12.52"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
               Ignore Patterns
             </label>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 6px', lineHeight: 1.4 }}>
+              Type glob pattern and press Enter to add.
+            </p>
             <div className="config-chips">
               {config.ignore.map((pattern, i) => (
                 <span key={i} className="config-chip">
@@ -270,7 +299,7 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
               Extensions Filter
             </label>
             <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 6px', lineHeight: 1.4 }}>
-              Empty = all files. Add extensions to limit scan.
+              Empty = all files. Type extension and press Enter to add.
             </p>
             <div className="config-chips">
               {config.extensions.map((ext, i) => (

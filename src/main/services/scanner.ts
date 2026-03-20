@@ -29,11 +29,6 @@ export async function scanProject(
     absolute: false
   })
 
-  console.log('[Scanner] entries found:', entries.length)
-  if (entries.length > 0) {
-    console.log('[Scanner] first 10 entries:', entries.slice(0, 10))
-  }
-
   for (const entry of entries) {
     const relativePath = typeof entry === 'string' ? entry : entry
     const fullPath = path.join(rootPath, relativePath)

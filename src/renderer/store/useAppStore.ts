@@ -143,7 +143,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsComparing: (v) => set({ isComparing: v }),
   setIsSyncing: (v) => set({ isSyncing: v }),
   setIsScanning: (v) => set({ isScanning: v }),
-  setCompareResult: (r) => set({ compareResult: r }),
+  setCompareResult: (r) => {
+    // Auto-select the most relevant filter tab after compare
+    let bestFilter: FileStatus | 'all' = 'all'
+    if (r) {
+      const { stats } = r
+      if (stats.conflict > 0) bestFilter = 'conflict'
+      else if (stats.modified > 0) bestFilter = 'modified'
+      else if (stats.only_in_p1 > 0) bestFilter = 'only_in_p1'
+      else if (stats.only_in_p2 > 0) bestFilter = 'only_in_p2'
+    }
+    set({ compareResult: r, currentFilter: bestFilter })
+  },
   setFilter: (f) => set({ currentFilter: f }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   toggleFileSelection: (path) => set((state) => {
