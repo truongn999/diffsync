@@ -67,7 +67,11 @@ const api: ElectronAPI = {
   setTitleBarTheme: (theme: string) => ipcRenderer.send('set-titlebar-theme', theme),
   platform: process.platform,
   resolveConflict: (p1Root: string, p2Root: string, relativePath: string, action: string) =>
-    ipcRenderer.invoke(IPC.RESOLVE_CONFLICT, p1Root, p2Root, relativePath, action)
+    ipcRenderer.invoke(IPC.RESOLVE_CONFLICT, p1Root, p2Root, relativePath, action),
+  exportConfig: (config: any) =>
+    ipcRenderer.invoke(IPC.EXPORT_CONFIG, config),
+  importConfig: () =>
+    ipcRenderer.invoke(IPC.IMPORT_CONFIG)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

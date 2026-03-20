@@ -141,6 +141,8 @@ export interface ElectronAPI {
   setTitleBarTheme(theme: 'light' | 'dark'): void
   platform: string
   resolveConflict(p1Root: string, p2Root: string, relativePath: string, action: ResolveAction): Promise<void>
+  exportConfig(config: SyncConfig): Promise<string | null>
+  importConfig(): Promise<SyncConfig | null>
 }
 
 export type ResolveAction = 'keep_p1' | 'keep_p2' | 'mark_resolved'

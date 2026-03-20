@@ -23,6 +23,8 @@ export const IPC = {
   LOAD_THEME: 'sync:load-theme',
   SAVE_THEME: 'sync:save-theme',
   RESOLVE_CONFLICT: 'sync:resolve-conflict',
+  EXPORT_CONFIG: 'sync:export-config',
+  IMPORT_CONFIG: 'sync:import-config',
 
   // Events (main → renderer)
   COMPARE_PROGRESS: 'sync:compare-progress',

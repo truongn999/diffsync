@@ -382,6 +382,17 @@ export default function Sidebar({ collapsed, onOpenScopeSelector }: SidebarProps
                 setConfig(defaultConfig)
                 addToast('Config reset to defaults', 'info')
               }}>Reset</button>
+              <button className="btn btn--ghost btn--sm" onClick={async () => {
+                const imported = await window.electronAPI.importConfig()
+                if (imported) {
+                  setConfig(imported)
+                  addToast('Config imported', 'success')
+                }
+              }}>Import</button>
+              <button className="btn btn--ghost btn--sm" onClick={async () => {
+                const filePath = await window.electronAPI.exportConfig(config)
+                if (filePath) addToast(`Config exported: ${filePath}`, 'success')
+              }}>Export</button>
               <button className="btn btn--primary btn--sm" onClick={handleSaveConfig}>Save</button>
             </div>
           </div>
