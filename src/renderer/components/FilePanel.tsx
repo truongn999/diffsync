@@ -73,7 +73,6 @@ export default function FilePanel({ style }: { style?: React.CSSProperties }) {
               </div>
               <div>File Path</div>
               <div>Status</div>
-              <div style={{ textAlign: 'center' }}>Actions</div>
             </div>
 
             {viewMode === 'flat' ? (
@@ -98,6 +97,25 @@ export default function FilePanel({ style }: { style?: React.CSSProperties }) {
   )
 }
 
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatTime(ms: number): string {
+  const d = new Date(ms)
+  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) + ' ' +
+    d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+}
+
+function buildTooltip(file: CompareItem): string {
+  const lines: string[] = [file.relativePath]
+  if (file.p1) lines.push(`P1: ${formatSize(file.p1.size)}  |  ${formatTime(file.p1.mtime)}`)
+  if (file.p2) lines.push(`P2: ${formatSize(file.p2.size)}  |  ${formatTime(file.p2.mtime)}`)
+  return lines.join('\n')
+}
+
 function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabel }: {
   file: CompareItem; isSelected: boolean; isActive: boolean
   onToggle: () => void; onClick: () => void; statusLabel: string
@@ -107,7 +125,7 @@ function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabe
   const dir = parts.join('/') + '/'
 
   return (
-    <div className={`file-row ${isActive ? 'file-row--active' : ''}`} onClick={onClick}>
+    <div className={`file-row ${isActive ? 'file-row--active' : ''}`} onClick={onClick} title={buildTooltip(file)}>
       <div className="file-row__check" onClick={e => e.stopPropagation()}>
         <input type="checkbox" checked={isSelected} onChange={onToggle} />
       </div>
@@ -120,11 +138,6 @@ function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabe
           <span className="status-badge__dot" />
           {statusLabel}
         </span>
-      </div>
-      <div className="file-row__action">
-        <button title="View diff">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
       </div>
     </div>
   )

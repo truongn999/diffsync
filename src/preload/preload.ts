@@ -50,6 +50,12 @@ const api: ElectronAPI = {
     return () => { ipcRenderer.removeListener(IPC.FILES_CHANGED, handler) }
   },
 
+  onCompareProgress: (callback: (progress: any) => void) => {
+    const handler = (_: any, progress: any) => callback(progress)
+    ipcRenderer.on(IPC.COMPARE_PROGRESS, handler)
+    return () => { ipcRenderer.removeListener(IPC.COMPARE_PROGRESS, handler) }
+  },
+
   exportReport: (p1Path: string, p2Path: string, compareResult: any) =>
     ipcRenderer.invoke(IPC.EXPORT_REPORT, p1Path, p2Path, compareResult),
 

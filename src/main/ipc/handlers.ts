@@ -38,19 +38,29 @@ export function registerIpcHandlers(): void {
 
   // ─── Compare Projects ────────────────────────
   ipcMain.handle(IPC.COMPARE_PROJECTS, async (_event, p1Root: string, p2Root: string, config: SyncConfig) => {
-    const [scan1, scan2] = await Promise.all([
-      scanProject(p1Root, config),
-      scanProject(p2Root, config)
-    ])
+    const win = BrowserWindow.getFocusedWindow()
+    const sendProgress = (phase: string, current: number, total: number) => {
+      win?.webContents.send(IPC.COMPARE_PROGRESS, { phase, current, total })
+    }
+
+    // Scan sequentially so we can report progress between phases
+    sendProgress('scanning-p1', 0, 1)
+    const scan1 = await scanProject(p1Root, config)
+    sendProgress('scanning-p1', 1, 1)
+
+    sendProgress('scanning-p2', 0, 1)
+    const scan2 = await scanProject(p2Root, config)
+    sendProgress('scanning-p2', 1, 1)
 
     // Filter by scope (selectedPaths)
     const p1Filtered = filterByScope(scan1.files, config.selectedPaths)
     const p2Filtered = filterByScope(scan2.files, config.selectedPaths)
 
     // Load manifest for conflict detection
+    sendProgress('comparing', 0, 1)
     const manifest = await loadManifest(p1Root, p2Root)
-
     const result = compareFiles(p1Filtered, p2Filtered, manifest)
+    sendProgress('comparing', 1, 1)
 
     // Save baseline entries for files not yet in manifest (first compare)
     if (Object.keys(result.newManifestEntries).length > 0) {

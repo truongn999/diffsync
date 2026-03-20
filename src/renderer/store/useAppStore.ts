@@ -71,6 +71,9 @@ interface AppState {
   // Sync progress
   syncProgress: { current: number; total: number; file: string } | null
 
+  // Compare progress
+  compareProgress: { phase: string; current: number; total: number } | null
+
   // File Watcher
   isWatching: boolean
 
@@ -103,6 +106,7 @@ interface AppState {
   addToast: (message: string, type: 'success' | 'error' | 'info') => void
   removeToast: (id: number) => void
   setSyncProgress: (p: { current: number; total: number; file: string } | null) => void
+  setCompareProgress: (p: { phase: string; current: number; total: number } | null) => void
   setIsWatching: (v: boolean) => void
   setTheme: (t: 'light' | 'dark') => void
 
@@ -135,6 +139,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   syncHistory: [],
   toasts: [],
   syncProgress: null,
+  compareProgress: null,
   isWatching: false,
   theme: 'dark',
 
@@ -146,14 +151,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCompareResult: (r) => {
     // Auto-select the most relevant filter tab after compare
     let bestFilter: FileStatus | 'all' = 'all'
+    let autoSelected = new Set<string>()
     if (r) {
       const { stats } = r
       if (stats.conflict > 0) bestFilter = 'conflict'
       else if (stats.modified > 0) bestFilter = 'modified'
       else if (stats.only_in_p1 > 0) bestFilter = 'only_in_p1'
       else if (stats.only_in_p2 > 0) bestFilter = 'only_in_p2'
+      // Auto-select all non-same files for sync
+      autoSelected = new Set(r.items.filter(f => f.status !== 'same').map(f => f.relativePath))
     }
-    set({ compareResult: r, currentFilter: bestFilter })
+    set({ compareResult: r, currentFilter: bestFilter, selectedFiles: autoSelected })
   },
   setFilter: (f) => set({ currentFilter: f }),
   setSearchQuery: (q) => set({ searchQuery: q }),
@@ -188,6 +196,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     toasts: state.toasts.filter(t => t.id !== id)
   })),
   setSyncProgress: (p) => set({ syncProgress: p }),
+  setCompareProgress: (p) => set({ compareProgress: p }),
   setIsWatching: (v) => set({ isWatching: v }),
   setTheme: (t) => {
     document.documentElement.setAttribute('data-theme', t)

@@ -24,6 +24,7 @@ export const IPC = {
   RESOLVE_CONFLICT: 'sync:resolve-conflict',
 
   // Events (main → renderer)
+  COMPARE_PROGRESS: 'sync:compare-progress',
   SYNC_PROGRESS: 'sync:progress',
   FILES_CHANGED: 'sync:files-changed',
 } as const

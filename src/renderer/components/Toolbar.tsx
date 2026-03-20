@@ -20,7 +20,8 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
     compareResult, currentFilter, setFilter, isComparing,
     p1Path, p2Path, config, setCompareResult, setIsComparing,
     addToast, selectedFiles, isSyncing, setIsSyncing, setSyncProgress,
-    setSyncHistory, isWatching, setIsWatching, theme, setTheme
+    setSyncHistory, isWatching, setIsWatching, theme, setTheme,
+    compareProgress, setCompareProgress
   } = useAppStore()
 
   const cleanupRef = useRef<(() => void) | null>(null)
@@ -39,6 +40,7 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
       addToast(`Compare failed: ${err}`, 'error')
     } finally {
       setIsComparing(false)
+      setCompareProgress(null)
     }
   }
 
@@ -119,12 +121,30 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
     }
   }, [])
 
+  // Listen for compare progress
+  useEffect(() => {
+    const cleanup = window.electronAPI.onCompareProgress((progress) => {
+      useAppStore.getState().setCompareProgress(progress)
+    })
+    return cleanup
+  }, [])
+
+  const phaseLabel: Record<string, string> = {
+    'scanning-p1': 'Scanning P1...',
+    'scanning-p2': 'Scanning P2...',
+    'comparing': 'Comparing files...'
+  }
+
   return (
     <div className="toolbar">
       <div className="toolbar__left">
         <div className="toolbar__group">
           <button className="btn btn--primary" onClick={handleCompare} disabled={isComparing || !p1Path || !p2Path}>
-            {isComparing ? <><span className="spinner" /> Comparing...</> : (
+            {isComparing ? <><span className="spinner" /> {compareProgress ? `${Math.round(
+              compareProgress.phase === 'scanning-p1' ? 16 :
+              compareProgress.phase === 'scanning-p2' ? 50 :
+              compareProgress.phase === 'comparing' ? 83 : 0
+            )}%` : 'Comparing...'}</> : (
               <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18M3 12h18"/></svg> Compare</>
             )}
           </button>
@@ -196,11 +216,17 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
       </div>
 
       <div className="toolbar__right">
-        <button className="btn" onClick={() => handleSync('p1-to-p2')} disabled={selectedFiles.size === 0 || isSyncing}>
-          Sync P1 → P2
+        <button className="btn" onClick={() => {
+          if (selectedFiles.size === 0) { addToast('No files selected. Check files in the list first.', 'error'); return }
+          handleSync('p1-to-p2')
+        }} disabled={isSyncing || !compareResult}>
+          Sync P1 → P2{selectedFiles.size > 0 ? ` (${selectedFiles.size})` : ''}
         </button>
-        <button className="btn" onClick={() => handleSync('p2-to-p1')} disabled={selectedFiles.size === 0 || isSyncing}>
-          Sync P2 → P1
+        <button className="btn" onClick={() => {
+          if (selectedFiles.size === 0) { addToast('No files selected. Check files in the list first.', 'error'); return }
+          handleSync('p2-to-p1')
+        }} disabled={isSyncing || !compareResult}>
+          Sync P2 → P1{selectedFiles.size > 0 ? ` (${selectedFiles.size})` : ''}
         </button>
       </div>
     </div>
