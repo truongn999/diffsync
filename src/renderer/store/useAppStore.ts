@@ -149,19 +149,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsSyncing: (v) => set({ isSyncing: v }),
   setIsScanning: (v) => set({ isScanning: v }),
   setCompareResult: (r) => {
-    // Auto-select the most relevant filter tab after compare
-    let bestFilter: FileStatus | 'all' = 'all'
     let autoSelected = new Set<string>()
     if (r) {
-      const { stats } = r
-      if (stats.conflict > 0) bestFilter = 'conflict'
-      else if (stats.modified > 0) bestFilter = 'modified'
-      else if (stats.only_in_p1 > 0) bestFilter = 'only_in_p1'
-      else if (stats.only_in_p2 > 0) bestFilter = 'only_in_p2'
       // Auto-select all non-same files for sync
       autoSelected = new Set(r.items.filter(f => f.status !== 'same').map(f => f.relativePath))
     }
-    set({ compareResult: r, currentFilter: bestFilter, selectedFiles: autoSelected })
+    set({ compareResult: r, currentFilter: 'all', selectedFiles: autoSelected })
   },
   setFilter: (f) => set({ currentFilter: f }),
   setSearchQuery: (q) => set({ searchQuery: q }),
@@ -210,7 +203,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!compareResult) return []
 
     let files = compareResult.items
-    if (currentFilter !== 'all') {
+    if (currentFilter === 'all') {
+      files = files.filter(f => f.status !== 'same')
+    } else {
       files = files.filter(f => f.status === currentFilter)
     }
     if (searchQuery) {

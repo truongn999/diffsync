@@ -3,7 +3,7 @@ import type { FileStatus } from '../../shared/types'
 import { useEffect, useRef } from 'react'
 
 const FILTERS: { key: FileStatus | 'all'; label: string; color?: string }[] = [
-  { key: 'all', label: 'All' },
+  { key: 'all', label: 'Changes' },
   { key: 'modified', label: 'Modified', color: 'var(--color-modified)' },
   { key: 'only_in_p1', label: 'Only P1', color: 'var(--color-only-p1)' },
   { key: 'only_in_p2', label: 'Only P2', color: 'var(--color-only-p2)' },
