@@ -9,7 +9,7 @@ import { generateDiff } from '../services/differ'
 import { syncFiles } from '../services/syncer'
 import { loadConfig, saveConfig } from '../services/config'
 import { loadHistory, addHistoryEntry, removeHistoryEntry } from '../services/history'
-import { loadManifest, updateManifestAfterSync } from '../services/manifest'
+import { loadManifest, updateManifestAfterSync, saveManifest } from '../services/manifest'
 import { restoreBackup, createBackup } from '../services/backup'
 import { loadRecentProjects, addRecentProject, removeRecentProject } from '../services/recentProjects'
 import { startWatching, stopWatching } from '../services/watcher'
@@ -50,7 +50,15 @@ export function registerIpcHandlers(): void {
     // Load manifest for conflict detection
     const manifest = await loadManifest(p1Root, p2Root)
 
-    return compareFiles(p1Filtered, p2Filtered, manifest)
+    const result = compareFiles(p1Filtered, p2Filtered, manifest)
+
+    // Save baseline entries for files not yet in manifest (first compare)
+    if (Object.keys(result.newManifestEntries).length > 0) {
+      Object.assign(manifest.files, result.newManifestEntries)
+      await saveManifest(p1Root, p2Root, manifest)
+    }
+
+    return result
   })
 
   // ─── Get Diff ────────────────────────────────

@@ -20,11 +20,6 @@ export async function scanProject(
     ? config.extensions.map(ext => `**/*${ext}`)
     : ['**/*']
 
-  console.log('[Scanner] rootPath:', rootPath)
-  console.log('[Scanner] patterns:', patterns)
-  console.log('[Scanner] ignore:', config.ignore)
-  console.log('[Scanner] extensions:', config.extensions)
-
   // Scan with fast-glob
   const entries = await fg(patterns, {
     cwd: rootPath,

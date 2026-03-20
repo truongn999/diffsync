@@ -1,8 +1,9 @@
-import type { FileInfo, CompareItem, CompareResult, Manifest } from '../../shared/types'
+import type { FileInfo, CompareItem, CompareResult, Manifest, ManifestEntry } from '../../shared/types'
 
 /**
  * Compares files between two scanned projects.
  * Uses hash-based comparison (fast, no line-level analysis until diff requested).
+ * On first compare (no manifest), creates baseline entries for conflict detection.
  */
 export function compareFiles(
   p1Files: Map<string, FileInfo>,
@@ -10,6 +11,7 @@ export function compareFiles(
   manifest?: Manifest
 ): CompareResult {
   const items: CompareItem[] = []
+  const newManifestEntries: Record<string, ManifestEntry> = {}
   const allPaths = new Set([...p1Files.keys(), ...p2Files.keys()])
 
   const stats = {
@@ -32,11 +34,30 @@ export function compareFiles(
     } else if (!p1 && p2) {
       status = 'only_in_p2'
     } else if (p1 && p2) {
+      const hasManifestEntry = manifest && manifest.files[relativePath]
+
       if (p1.hash === p2.hash) {
         status = 'same'
+        // Create baseline for identical files not yet in manifest
+        if (!hasManifestEntry) {
+          newManifestEntries[relativePath] = {
+            lastSyncHashP1: p1.hash,
+            lastSyncHashP2: p2.hash
+          }
+        }
       } else {
-        // Check for conflict using manifest
-        status = detectConflict(relativePath, p1, p2, manifest) ? 'conflict' : 'modified'
+        // Files differ — check for conflict using manifest
+        if (hasManifestEntry) {
+          status = detectConflict(relativePath, p1, p2, manifest!) ? 'conflict' : 'modified'
+        } else {
+          // No manifest entry → first time seeing this file pair
+          // Create baseline with current hashes for future conflict detection
+          status = 'modified'
+          newManifestEntries[relativePath] = {
+            lastSyncHashP1: p1.hash,
+            lastSyncHashP2: p2.hash
+          }
+        }
       }
     } else {
       continue // shouldn't happen
@@ -57,7 +78,7 @@ export function compareFiles(
   }
   items.sort((a, b) => statusOrder[a.status] - statusOrder[b.status])
 
-  return { items, stats }
+  return { items, stats, newManifestEntries }
 }
 
 /**
@@ -68,15 +89,11 @@ function detectConflict(
   relativePath: string,
   p1: FileInfo,
   p2: FileInfo,
-  manifest?: Manifest
+  manifest: Manifest
 ): boolean {
-  if (!manifest || !manifest.files[relativePath]) {
-    return false // No manifest → treat as modified (not conflict)
-  }
-
   const entry = manifest.files[relativePath]
+  if (!entry) return false
 
-  // Conflict = both changed since last sync
   const p1Changed = p1.hash !== entry.lastSyncHashP1
   const p2Changed = p2.hash !== entry.lastSyncHashP2
 

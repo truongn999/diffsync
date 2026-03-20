@@ -197,4 +197,73 @@ describe('Comparator Service', () => {
       expect(r.stats.only_in_p2).toBe(0)
     })
   })
+
+  // ─────────────────────────────────────────────────────────
+  // Auto-Baseline (first compare creates manifest entries)
+  // ─────────────────────────────────────────────────────────
+  describe('Auto-baseline on first compare', () => {
+    it('should create baseline entries for files in both projects without manifest', () => {
+      const r = compareFiles(p1Files, p2Files)
+      // Files in both projects should get baseline entries
+      expect(Object.keys(r.newManifestEntries).length).toBeGreaterThan(0)
+    })
+
+    it('should create baseline for identical files (same status)', () => {
+      const r = compareFiles(p1Files, p2Files)
+      const entry = r.newManifestEntries['src/utils.ts']
+      expect(entry).toBeDefined()
+      expect(entry.lastSyncHashP1).toBe(p1Files.get('src/utils.ts')!.hash)
+      expect(entry.lastSyncHashP2).toBe(p2Files.get('src/utils.ts')!.hash)
+    })
+
+    it('should create baseline for modified files (different hashes)', () => {
+      const r = compareFiles(p1Files, p2Files)
+      const entry = r.newManifestEntries['src/hooks/useAuth.ts']
+      expect(entry).toBeDefined()
+      expect(entry.lastSyncHashP1).toBe(p1Files.get('src/hooks/useAuth.ts')!.hash)
+      expect(entry.lastSyncHashP2).toBe(p2Files.get('src/hooks/useAuth.ts')!.hash)
+    })
+
+    it('should NOT create baseline for files only in one project', () => {
+      const r = compareFiles(p1Files, p2Files)
+      expect(r.newManifestEntries['src/constants.ts']).toBeUndefined()
+      expect(r.newManifestEntries['src/helpers/debounce.ts']).toBeUndefined()
+    })
+
+    it('should NOT create baseline entries when manifest already has all files', () => {
+      const manifest: Manifest = {
+        files: {
+          'src/utils.ts': {
+            lastSyncHashP1: p1Files.get('src/utils.ts')!.hash,
+            lastSyncHashP2: p2Files.get('src/utils.ts')!.hash
+          },
+          'src/hooks/useAuth.ts': {
+            lastSyncHashP1: 'stale-hash-p1',
+            lastSyncHashP2: 'stale-hash-p2'
+          }
+        }
+      }
+      const r = compareFiles(p1Files, p2Files, manifest)
+      expect(Object.keys(r.newManifestEntries).length).toBe(0)
+    })
+
+    it('should detect conflict after baseline is established and both sides change', () => {
+      // Simulate: first compare creates baseline
+      const baseline = compareFiles(p1Files, p2Files)
+      const manifest: Manifest = { files: { ...baseline.newManifestEntries } }
+
+      // Simulate: both sides changed (use fake hashes different from baseline)
+      const p1Changed = new Map(p1Files)
+      const p2Changed = new Map(p2Files)
+      const authP1 = { ...p1Changed.get('src/hooks/useAuth.ts')!, hash: 'new-hash-p1' }
+      const authP2 = { ...p2Changed.get('src/hooks/useAuth.ts')!, hash: 'new-hash-p2' }
+      p1Changed.set('src/hooks/useAuth.ts', authP1)
+      p2Changed.set('src/hooks/useAuth.ts', authP2)
+
+      const r2 = compareFiles(p1Changed, p2Changed, manifest)
+      const file = r2.items.find(i => i.relativePath === 'src/hooks/useAuth.ts')!
+      expect(file.status).toBe('conflict')
+      expect(r2.stats.conflict).toBe(1)
+    })
+  })
 })

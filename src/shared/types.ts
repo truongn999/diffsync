@@ -26,6 +26,8 @@ export interface CompareResult {
     same: number
     conflict: number
   }
+  /** New manifest entries created during first compare (baseline snapshot) */
+  newManifestEntries: Record<string, ManifestEntry>
 }
 
 // ─── Diff ────────────────────────────────────
