@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { useAppStore } from './store/useAppStore'
 import TitleBar from './components/TitleBar'
+import MenuBar from './components/MenuBar'
 import Toolbar from './components/Toolbar'
 import Sidebar from './components/Sidebar'
 import FilePanel from './components/FilePanel'
@@ -34,6 +35,13 @@ export default function App() {
     window.electronAPI.loadTheme().then((savedTheme) => {
       setTheme(savedTheme)
     })
+  }, [])
+
+  // Listen for show-shortcuts from MenuBar
+  useEffect(() => {
+    const handler = () => setShowShortcuts(true)
+    document.addEventListener('show-shortcuts', handler)
+    return () => document.removeEventListener('show-shortcuts', handler)
   }, [])
 
   // ─── Panel Resize ─────────────────────────────
@@ -123,6 +131,7 @@ export default function App() {
   return (
     <div className="app-container">
       <TitleBar />
+      <MenuBar />
       <Toolbar onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="app-main" ref={mainRef}>

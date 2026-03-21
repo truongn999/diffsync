@@ -210,6 +210,100 @@ html, body, #root {
 .btn--full { width: 100%; justify-content: center; }
 
 /* ═══════════════════════════════════════════════ */
+/* MENU BAR                                        */
+/* ═══════════════════════════════════════════════ */
+.menubar {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-sm);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  height: 28px;
+  -webkit-app-region: no-drag;
+}
+
+.menubar__dropdown {
+  position: relative;
+}
+
+.menubar__trigger {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background 0.15s, color 0.15s;
+}
+
+.menubar__trigger:hover,
+.menubar__trigger--active {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.menubar__menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 4px 0;
+  z-index: 1000;
+  animation: menubar-fade 0.1s ease;
+}
+
+@keyframes menubar-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menubar__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.menubar__item:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.menubar__item:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.menubar__shortcut {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 24px;
+}
+
+.menubar__item:hover:not(:disabled) .menubar__shortcut {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.menubar__separator {
+  height: 1px;
+  background: var(--border-secondary);
+  margin: 4px 8px;
+}
+
+/* ═══════════════════════════════════════════════ */
 /* TOOLBAR                                         */
 /* ═══════════════════════════════════════════════ */
 .toolbar-wrapper {
@@ -1031,7 +1125,7 @@ html, body, #root {
   width: 16px;
   height: 16px;
   color: var(--accent);
-  filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.4));
+  /* filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.4)); */
 }
 
 .titlebar__name {
