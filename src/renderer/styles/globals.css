@@ -692,7 +692,32 @@ html, body, #root {
   background: var(--bg-secondary);
 }
 
+.diff-panel__header .diff-panel__header__left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .diff-panel__file-name { font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); }
+
+.btn-copy-filename {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-copy-filename:hover { background: var(--bg-hover); color: var(--text-primary); }
+.btn-copy-filename:active { transform: scale(0.9); }
+.btn-copy-filename svg { flex-shrink: 0; }
 
 .diff-panel__controls {
   display: flex;

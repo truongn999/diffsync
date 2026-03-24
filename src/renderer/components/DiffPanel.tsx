@@ -1,5 +1,5 @@
 import { useAppStore } from '../store/useAppStore'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { DiffEditor } from '@monaco-editor/react'
 import type { ResolveAction } from '../../shared/types'
 
@@ -44,8 +44,19 @@ export default function DiffPanel() {
   const [isResolving, setIsResolving] = useState(false)
   const [p1ImageData, setP1ImageData] = useState<string | null>(null)
   const [p2ImageData, setP2ImageData] = useState<string | null>(null)
+  const [copiedPath, setCopiedPath] = useState(false)
 
   const diffEditorRef = useRef<any>(null)
+
+  const handleCopyFileName = useCallback(async (path: string) => {
+    try {
+      await navigator.clipboard.writeText(path)
+      setCopiedPath(true)
+      setTimeout(() => setCopiedPath(false), 1500)
+    } catch {
+      addToast('Failed to copy file name', 'error')
+    }
+  }, [addToast])
   const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light'
 
   useEffect(() => {
@@ -146,7 +157,20 @@ export default function DiffPanel() {
     return (
       <div className="diff-panel">
         <div className="diff-panel__header">
-          <span className="diff-panel__file-name">{activeFile.relativePath}</span>
+          <div className="diff-panel__header__left">
+            <button
+              className="btn-copy-filename"
+              onClick={() => handleCopyFileName(activeFile.relativePath)}
+              title={copiedPath ? 'Copied!' : 'Copy file name'}
+            >
+              {copiedPath ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              )}
+            </button>
+            <span className="diff-panel__file-name">{activeFile.relativePath}</span>
+          </div>
           <span className="status-badge status-badge--same"><span className="status-badge__dot" /> SAME</span>
         </div>
         <div className="diff-panel__placeholder">
@@ -163,7 +187,20 @@ export default function DiffPanel() {
   return (
     <div className="diff-panel">
       <div className="diff-panel__header">
-        <span className="diff-panel__file-name">{activeFile.relativePath}</span>
+        <div className="diff-panel__header__left">
+          <button
+            className="btn-copy-filename"
+            onClick={() => handleCopyFileName(activeFile.relativePath)}
+            title={copiedPath ? 'Copied!' : 'Copy file name'}
+          >
+            {copiedPath ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            )}
+          </button>
+          <span className="diff-panel__file-name">{activeFile.relativePath}</span>
+        </div>
         <div className="diff-panel__controls">
           <span className={`status-badge status-badge--${activeFile.status}`}>
             <span className="status-badge__dot" />
