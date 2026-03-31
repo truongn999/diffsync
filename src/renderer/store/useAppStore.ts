@@ -149,12 +149,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsSyncing: (v) => set({ isSyncing: v }),
   setIsScanning: (v) => set({ isScanning: v }),
   setCompareResult: (r) => {
-    let autoSelected = new Set<string>()
+    const current = get().selectedFiles
     if (r) {
-      // Auto-select all non-same files for sync
-      autoSelected = new Set(r.items.filter(f => f.status !== 'same').map(f => f.relativePath))
+      const validPaths = new Set(r.items.filter(f => f.status !== 'same').map(f => f.relativePath))
+      // Keep only selections that still exist and are non-same
+      const kept = new Set([...current].filter(p => validPaths.has(p)))
+      set({ compareResult: r, currentFilter: 'all', selectedFiles: kept })
+    } else {
+      set({ compareResult: r, currentFilter: 'all', selectedFiles: new Set() })
     }
-    set({ compareResult: r, currentFilter: 'all', selectedFiles: autoSelected })
   },
   setFilter: (f) => set({ currentFilter: f }),
   setSearchQuery: (q) => set({ searchQuery: q }),
