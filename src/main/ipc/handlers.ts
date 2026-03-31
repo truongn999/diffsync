@@ -14,6 +14,7 @@ import { restoreBackup, createBackup } from '../services/backup'
 import { loadRecentProjects, addRecentProject, removeRecentProject } from '../services/recentProjects'
 import { startWatching, stopWatching } from '../services/watcher'
 import { generateReport } from '../services/reportGenerator'
+import { saveMergedFile } from '../services/merger'
 
 export function registerIpcHandlers(): void {
   // ─── Select Folder ───────────────────────────
@@ -281,6 +282,11 @@ export function registerIpcHandlers(): void {
       new Map([[relativePath, p1Hash]]),
       new Map([[relativePath, p2Hash]])
     )
+  })
+
+  // ─── Save Merged File ──────────────────────────
+  ipcMain.handle(IPC.SAVE_MERGED_FILE, async (_event, p1Root: string, p2Root: string, relativePath: string, mergedContent: string) => {
+    return saveMergedFile(p1Root, p2Root, relativePath, mergedContent)
   })
 }
 

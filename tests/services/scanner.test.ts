@@ -27,8 +27,9 @@ describe('Scanner Service', () => {
   })
 
   it('should scan all files in the project directory', () => {
-    // project-a has: README.md, src/utils.ts, src/hooks/useAuth.ts, src/constants.ts
-    expect(scanResult.totalScanned).toBe(4)
+    // project-a has: README.md, src/utils.ts, src/hooks/useAuth.ts, src/constants.ts,
+    //   src/database.ts, src/logger.ts, src/validators.ts, src/config.ts, src/user.ts
+    expect(scanResult.totalScanned).toBe(9)
     expect(scanResult.files.size).toBe(scanResult.totalScanned)
   })
 
@@ -75,10 +76,11 @@ describe('Scanner Service', () => {
 
   it('should scan project-b with different file structure', async () => {
     const resultB = await scanProject(FIXTURE_B, baseConfig)
-    // project-b has: README.md, src/utils.ts, src/hooks/useAuth.ts, src/helpers/debounce.ts
-    expect(resultB.totalScanned).toBe(4)
+    // project-b has: README.md, src/utils.ts, src/hooks/useAuth.ts, src/helpers/debounce.ts,
+    //   src/constants.ts, src/database.ts, src/cache.ts, src/api.ts, src/config.ts, src/user.ts
+    expect(resultB.totalScanned).toBe(10)
     expect(resultB.files.has('src/helpers/debounce.ts')).toBe(true)
-    expect(resultB.files.has('src/constants.ts')).toBe(false)
+    expect(resultB.files.has('src/constants.ts')).toBe(true)
   })
 
   // ─────────────────────────────────────────────────────────

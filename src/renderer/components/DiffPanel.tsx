@@ -2,26 +2,8 @@ import { useAppStore } from '../store/useAppStore'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { DiffEditor } from '@monaco-editor/react'
 import type { ResolveAction } from '../../shared/types'
-
-// Map file extensions to Monaco language IDs
-function getLanguage(filePath: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase() || ''
-  const map: Record<string, string> = {
-    ts: 'typescript', tsx: 'typescript',
-    js: 'javascript', jsx: 'javascript',
-    json: 'json', html: 'html', htm: 'html',
-    css: 'css', scss: 'scss', less: 'less',
-    md: 'markdown', yaml: 'yaml', yml: 'yaml',
-    xml: 'xml', svg: 'xml',
-    py: 'python', rb: 'ruby', go: 'go',
-    rs: 'rust', java: 'java', kt: 'kotlin',
-    sh: 'shell', bash: 'shell',
-    sql: 'sql', graphql: 'graphql',
-    dockerfile: 'dockerfile',
-    txt: 'plaintext'
-  }
-  return map[ext] || 'plaintext'
-}
+import MergeEditor from './MergeEditor'
+import { getLanguage } from '../utils/language'
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp', 'avif'])
 
@@ -45,6 +27,7 @@ export default function DiffPanel() {
   const [p1ImageData, setP1ImageData] = useState<string | null>(null)
   const [p2ImageData, setP2ImageData] = useState<string | null>(null)
   const [copiedPath, setCopiedPath] = useState(false)
+  const [showMergeEditor, setShowMergeEditor] = useState(false)
 
   const diffEditorRef = useRef<any>(null)
 
@@ -108,6 +91,11 @@ export default function DiffPanel() {
       loadContent()
     }
   }, [activeFile, p1Path, p2Path])
+
+  // Reset merge editor when active file changes
+  useEffect(() => {
+    setShowMergeEditor(false)
+  }, [activeFile])
 
   const handleResolve = async (action: ResolveAction) => {
     if (!activeFile || !p1Path || !p2Path) return
@@ -218,7 +206,7 @@ export default function DiffPanel() {
         </div>
       </div>
 
-      {isConflict && (
+      {isConflict && !showMergeEditor && (
         <div className="resolve-bar">
           <div className="resolve-bar__label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -227,12 +215,19 @@ export default function DiffPanel() {
             </svg>
             Both sides changed — resolve conflict:
           </div>
-          <div className="resolve-bar__actions">
+         <div className="resolve-bar__actions">
             <button className="btn btn--xs btn--primary" onClick={() => handleResolve('keep_p1')} disabled={isResolving}>
               Keep P1
             </button>
             <button className="btn btn--xs btn--primary" onClick={() => handleResolve('keep_p2')} disabled={isResolving}>
               Keep P2
+            </button>
+            <button className="btn btn--xs btn--accent" onClick={() => setShowMergeEditor(true)} disabled={isResolving}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+                <path d="M6 21V9a9 9 0 009 9"/>
+              </svg>
+              Merge
             </button>
             <button className="btn btn--xs btn--ghost" onClick={() => handleResolve('mark_resolved')} disabled={isResolving}>
               Mark Resolved
@@ -241,7 +236,26 @@ export default function DiffPanel() {
         </div>
       )}
 
-      {isBinary ? (
+      {isConflict && showMergeEditor ? (
+        <MergeEditor
+          relativePath={activeFile.relativePath}
+          p1Content={p1Content}
+          p2Content={p2Content}
+          onClose={() => setShowMergeEditor(false)}
+          onMerged={async () => {
+            setShowMergeEditor(false)
+            if (p1Path && p2Path) {
+              setIsComparing(true)
+              try {
+                const result = await window.electronAPI.compareProjects(p1Path, p2Path, config)
+                setCompareResult(result)
+              } finally {
+                setIsComparing(false)
+              }
+            }
+          }}
+        />
+      ) : isBinary ? (
         <div className="binary-preview">
           <div className="binary-preview__side">
             <div className="binary-preview__label">

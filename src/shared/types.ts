@@ -108,6 +108,13 @@ export interface Manifest {
   files: Record<string, ManifestEntry>
 }
 
+// ─── Merge ──────────────────────────────────
+export interface MergeResult {
+  success: boolean
+  backupPaths: string[]
+  error?: string
+}
+
 // ─── Scan ────────────────────────────────────
 export interface ScanResult {
   files: Map<string, FileInfo>
@@ -141,6 +148,7 @@ export interface ElectronAPI {
   setTitleBarTheme(theme: 'light' | 'dark'): void
   platform: string
   resolveConflict(p1Root: string, p2Root: string, relativePath: string, action: ResolveAction): Promise<void>
+  saveMergedFile(p1Root: string, p2Root: string, relativePath: string, mergedContent: string): Promise<MergeResult>
   exportConfig(config: SyncConfig): Promise<string | null>
   importConfig(): Promise<SyncConfig | null>
 }

@@ -1631,3 +1631,108 @@ html, body, #root {
   display: flex;
   gap: var(--space-xs);
 }
+
+/* ═══════════════════════════════════════════════ */
+/* MERGE EDITOR                                    */
+/* ═══════════════════════════════════════════════ */
+.merge-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: merge-editor-in 0.2s ease;
+}
+
+@keyframes merge-editor-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.merge-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: linear-gradient(135deg, rgba(88, 166, 255, 0.08), rgba(163, 113, 247, 0.08));
+  border-bottom: 1px solid var(--accent);
+}
+
+.merge-editor__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--accent);
+}
+
+.merge-editor__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.merge-editor__title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.merge-editor__body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  gap: 1px;
+  background: var(--border-primary);
+}
+
+.merge-editor__panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+  min-width: 0;
+}
+
+.merge-editor__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px var(--space-md);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-secondary);
+  min-height: 30px;
+}
+
+.merge-editor__panel-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.merge-editor__panel-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.merge-editor__panel-badge--readonly {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-primary);
+}
+
+.merge-editor__panel-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.merge-editor__panel-content {
+  flex: 1;
+  overflow: hidden;
+}

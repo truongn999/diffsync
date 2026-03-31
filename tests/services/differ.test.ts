@@ -88,21 +88,21 @@ describe('Differ Service', () => {
   // ─────────────────────────────────────────────────────────
   // File Only in One Project
   // ─────────────────────────────────────────────────────────
-  describe('File only in P1 (src/constants.ts)', () => {
+  describe('File only in P1 (src/logger.ts)', () => {
     it('should have non-empty P1 content and empty P2 content', async () => {
-      const result = await generateDiff(FIXTURE_A, FIXTURE_B, 'src/constants.ts')
+      const result = await generateDiff(FIXTURE_A, FIXTURE_B, 'src/logger.ts')
       expect(result.p1Content.length).toBeGreaterThan(0)
       expect(result.p2Content).toBe('')
     })
 
     it('should count all lines as deletions, zero additions', async () => {
-      const result = await generateDiff(FIXTURE_A, FIXTURE_B, 'src/constants.ts')
+      const result = await generateDiff(FIXTURE_A, FIXTURE_B, 'src/logger.ts')
       expect(result.stats.deletions).toBeGreaterThan(0)
       expect(result.stats.additions).toBe(0)
     })
 
     it('should mark all P1 lines as "remove" type', async () => {
-      const result = await generateDiff(FIXTURE_A, FIXTURE_B, 'src/constants.ts')
+      const result = await generateDiff(FIXTURE_A, FIXTURE_B, 'src/logger.ts')
       for (const line of result.p1Lines) {
         expect(line.type).toBe('remove')
       }
