@@ -68,6 +68,8 @@ const api: ElectronAPI = {
   platform: process.platform,
   resolveConflict: (p1Root: string, p2Root: string, relativePath: string, action: string) =>
     ipcRenderer.invoke(IPC.RESOLVE_CONFLICT, p1Root, p2Root, relativePath, action),
+  saveMergedFile: (p1Root: string, p2Root: string, relativePath: string, mergedContent: string) =>
+    ipcRenderer.invoke(IPC.SAVE_MERGED_FILE, p1Root, p2Root, relativePath, mergedContent),
   exportConfig: (config: any) =>
     ipcRenderer.invoke(IPC.EXPORT_CONFIG, config),
   importConfig: () =>

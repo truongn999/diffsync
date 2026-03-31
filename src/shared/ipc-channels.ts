@@ -23,6 +23,7 @@ export const IPC = {
   LOAD_THEME: 'sync:load-theme',
   SAVE_THEME: 'sync:save-theme',
   RESOLVE_CONFLICT: 'sync:resolve-conflict',
+  SAVE_MERGED_FILE: 'sync:save-merged-file',
   EXPORT_CONFIG: 'sync:export-config',
   IMPORT_CONFIG: 'sync:import-config',
 
