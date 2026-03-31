@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { DiffEditor, Editor } from '@monaco-editor/react'
 import { useAppStore } from '../store/useAppStore'
 import { getLanguage } from '../utils/language'
+import ConfirmDialog from './ConfirmDialog'
 import type { editor } from 'monaco-editor'
 
 interface MergeEditorProps {
@@ -16,6 +17,7 @@ export default function MergeEditor({ relativePath, p1Content, p2Content, onClos
   const { p1Path, p2Path, addToast, theme } = useAppStore()
   const [mergedContent, setMergedContent] = useState(p1Content)
   const [isSaving, setIsSaving] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
   const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light'
@@ -69,7 +71,7 @@ export default function MergeEditor({ relativePath, p1Content, p2Content, onClos
           <button className="btn btn--ghost btn--sm" onClick={onClose} disabled={isSaving}>
             Cancel
           </button>
-          <button className="btn btn--primary btn--sm" onClick={handleSave} disabled={isSaving}>
+          <button className="btn btn--primary btn--sm" onClick={() => setShowConfirm(true)} disabled={isSaving}>
             {isSaving ? (
               <>
                 <span className="spinner" style={{ width: 12, height: 12 }} />
@@ -87,6 +89,18 @@ export default function MergeEditor({ relativePath, p1Content, p2Content, onClos
           </button>
         </div>
       </div>
+
+      {showConfirm && (
+        <ConfirmDialog
+          title="Save Merged File"
+          message={`Save merged content to both projects?`}
+          detail={`"${relativePath}" will be overwritten in both P1 and P2 with the merged result.`}
+          confirmLabel="Save Merge"
+          variant="warning"
+          onConfirm={() => { setShowConfirm(false); handleSave() }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
 
       {/* Body */}
       <div className="merge-editor__body">

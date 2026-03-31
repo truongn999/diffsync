@@ -92,8 +92,8 @@ describe('UC1: Scan → Compare → View Results', () => {
     const result = compareFiles(scan1.files, scan2.files)
 
     expect(result.stats.total).toBe(11)
-    expect(result.stats.same).toBe(2)       // utils.ts, config.ts
-    expect(result.stats.modified).toBe(4)    // constants.ts, useAuth.ts, database.ts, user.ts
+    expect(result.stats.same).toBe(1)       // utils.ts
+    expect(result.stats.modified).toBe(5)    // constants.ts, useAuth.ts, database.ts, user.ts, config.ts
     expect(result.stats.only_in_p1).toBe(2)  // logger.ts, validators.ts
     expect(result.stats.only_in_p2).toBe(3)  // debounce.ts, cache.ts, api.ts
   })

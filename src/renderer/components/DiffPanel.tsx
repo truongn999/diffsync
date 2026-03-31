@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { DiffEditor } from '@monaco-editor/react'
 import type { ResolveAction } from '../../shared/types'
 import MergeEditor from './MergeEditor'
+import ConfirmDialog from './ConfirmDialog'
 import { getLanguage } from '../utils/language'
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp', 'avif'])
@@ -28,6 +29,7 @@ export default function DiffPanel() {
   const [p2ImageData, setP2ImageData] = useState<string | null>(null)
   const [copiedPath, setCopiedPath] = useState(false)
   const [showMergeEditor, setShowMergeEditor] = useState(false)
+  const [pendingResolve, setPendingResolve] = useState<ResolveAction | null>(null)
 
   const diffEditorRef = useRef<any>(null)
 
@@ -216,10 +218,10 @@ export default function DiffPanel() {
             Both sides changed — resolve conflict:
           </div>
          <div className="resolve-bar__actions">
-            <button className="btn btn--xs btn--primary" onClick={() => handleResolve('keep_p1')} disabled={isResolving}>
+            <button className="btn btn--xs btn--primary" onClick={() => setPendingResolve('keep_p1')} disabled={isResolving}>
               Keep P1
             </button>
-            <button className="btn btn--xs btn--primary" onClick={() => handleResolve('keep_p2')} disabled={isResolving}>
+            <button className="btn btn--xs btn--primary" onClick={() => setPendingResolve('keep_p2')} disabled={isResolving}>
               Keep P2
             </button>
             <button className="btn btn--xs btn--accent" onClick={() => setShowMergeEditor(true)} disabled={isResolving}>
@@ -234,6 +236,20 @@ export default function DiffPanel() {
             </button>
           </div>
         </div>
+      )}
+
+      {pendingResolve && (
+        <ConfirmDialog
+          title={pendingResolve === 'keep_p1' ? 'Keep P1 Version' : 'Keep P2 Version'}
+          message={pendingResolve === 'keep_p1'
+            ? 'Overwrite P2 with P1 content?'
+            : 'Overwrite P1 with P2 content?'}
+          detail={`"${activeFile?.relativePath}" — the other side will be overwritten.`}
+          confirmLabel={pendingResolve === 'keep_p1' ? 'Keep P1' : 'Keep P2'}
+          variant="warning"
+          onConfirm={() => { const action = pendingResolve; setPendingResolve(null); handleResolve(action) }}
+          onCancel={() => setPendingResolve(null)}
+        />
       )}
 
       {isConflict && showMergeEditor ? (

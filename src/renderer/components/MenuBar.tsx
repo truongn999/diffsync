@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import ConfirmDialog from './ConfirmDialog'
 
 type MenuItem = {
   label: string
@@ -18,6 +19,7 @@ export default function MenuBar() {
   } = useAppStore()
 
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [pendingSync, setPendingSync] = useState<'p1-to-p2' | 'p2-to-p1' | null>(null)
   const menuBarRef = useRef<HTMLDivElement>(null)
 
   // Close menu when clicking outside
@@ -174,8 +176,8 @@ export default function MenuBar() {
     Sync: [
       { label: 'Compare', onClick: handleCompare, disabled: !p1Path || !p2Path || isComparing, shortcut: '' },
       { separator: true },
-      { label: 'Sync P1 → P2', onClick: () => handleSync('p1-to-p2'), disabled: !compareResult || isSyncing },
-      { label: 'Sync P2 → P1', onClick: () => handleSync('p2-to-p1'), disabled: !compareResult || isSyncing },
+      { label: 'Sync P1 → P2', onClick: () => { setOpenMenu(null); setPendingSync('p1-to-p2') }, disabled: !compareResult || isSyncing },
+      { label: 'Sync P2 → P1', onClick: () => { setOpenMenu(null); setPendingSync('p2-to-p1') }, disabled: !compareResult || isSyncing },
       { separator: true },
       { label: 'Select All', onClick: () => { selectAllFiles(); setOpenMenu(null) }, disabled: !compareResult },
       { label: 'Deselect All', onClick: () => { deselectAllFiles(); setOpenMenu(null) }, disabled: !compareResult }
@@ -188,6 +190,7 @@ export default function MenuBar() {
   }
 
   return (
+    <>
     <div className="menubar" ref={menuBarRef}>
       {Object.entries(menus).map(([name, items]) => (
         <div className="menubar__dropdown" key={name}>
@@ -220,5 +223,20 @@ export default function MenuBar() {
         </div>
       ))}
     </div>
+
+      {pendingSync && (
+        <ConfirmDialog
+          title={pendingSync === 'p1-to-p2' ? 'Sync P1 → P2' : 'Sync P2 → P1'}
+          message={`Are you sure you want to sync ${selectedFiles.size} file${selectedFiles.size > 1 ? 's' : ''}?`}
+          detail={pendingSync === 'p1-to-p2'
+            ? 'Files from Project 1 will overwrite Project 2.'
+            : 'Files from Project 2 will overwrite Project 1.'}
+          confirmLabel="Sync Now"
+          variant="warning"
+          onConfirm={() => { const dir = pendingSync; setPendingSync(null); handleSync(dir) }}
+          onCancel={() => setPendingSync(null)}
+        />
+      )}
+    </>
   )
 }

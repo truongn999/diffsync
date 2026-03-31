@@ -1,6 +1,7 @@
 import { useAppStore } from '../store/useAppStore'
 import type { FileStatus } from '../../shared/types'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import ConfirmDialog from './ConfirmDialog'
 
 const FILTERS: { key: FileStatus | 'all'; label: string; color?: string }[] = [
   { key: 'all', label: 'Changes' },
@@ -25,6 +26,7 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
   } = useAppStore()
 
   const cleanupRef = useRef<(() => void) | null>(null)
+  const [pendingSync, setPendingSync] = useState<'p1-to-p2' | 'p2-to-p1' | null>(null)
 
   const handleCompare = async () => {
     if (!p1Path || !p2Path) {
@@ -218,17 +220,31 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
       <div className="toolbar__right">
         <button className="btn" onClick={() => {
           if (selectedFiles.size === 0) { addToast('No files selected. Check files in the list first.', 'error'); return }
-          handleSync('p1-to-p2')
+          setPendingSync('p1-to-p2')
         }} disabled={isSyncing || !compareResult}>
           Sync P1 → P2{selectedFiles.size > 0 ? ` (${selectedFiles.size})` : ''}
         </button>
         <button className="btn" onClick={() => {
           if (selectedFiles.size === 0) { addToast('No files selected. Check files in the list first.', 'error'); return }
-          handleSync('p2-to-p1')
+          setPendingSync('p2-to-p1')
         }} disabled={isSyncing || !compareResult}>
           Sync P2 → P1{selectedFiles.size > 0 ? ` (${selectedFiles.size})` : ''}
         </button>
       </div>
+
+      {pendingSync && (
+        <ConfirmDialog
+          title={pendingSync === 'p1-to-p2' ? 'Sync P1 → P2' : 'Sync P2 → P1'}
+          message={`Are you sure you want to sync ${selectedFiles.size} file${selectedFiles.size > 1 ? 's' : ''}?`}
+          detail={pendingSync === 'p1-to-p2'
+            ? 'Files from Project 1 will overwrite Project 2.'
+            : 'Files from Project 2 will overwrite Project 1.'}
+          confirmLabel="Sync Now"
+          variant="warning"
+          onConfirm={() => { const dir = pendingSync; setPendingSync(null); handleSync(dir) }}
+          onCancel={() => setPendingSync(null)}
+        />
+      )}
     </div>
   )
 }
