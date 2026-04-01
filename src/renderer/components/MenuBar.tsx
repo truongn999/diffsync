@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useCompare } from '../hooks/useCompare'
+import { useSync } from '../hooks/useSync'
 import ConfirmDialog from './ConfirmDialog'
 
 type MenuItem = {
@@ -14,15 +16,15 @@ export default function MenuBar() {
     p1Path, p2Path, config, setP1Path, setP2Path, setConfig,
     toggleSidebar, theme, setTheme, addToast, compareResult,
     selectAllFiles, deselectAllFiles, selectedFiles,
-    isComparing, isSyncing, setIsComparing, setCompareResult,
-    setIsSyncing, setSyncProgress, setSyncHistory, setCompareProgress
+    isComparing, isSyncing
   } = useAppStore()
 
+  const { handleCompare } = useCompare()
+  const { handleSync } = useSync()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [pendingSync, setPendingSync] = useState<'p1-to-p2' | 'p2-to-p1' | null>(null)
   const menuBarRef = useRef<HTMLDivElement>(null)
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuBarRef.current && !menuBarRef.current.contains(e.target as Node)) {
@@ -33,7 +35,6 @@ export default function MenuBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Close on Escape
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpenMenu(null)
@@ -50,53 +51,6 @@ export default function MenuBar() {
       addToast(`${target.toUpperCase()} set: ${folder}`, 'info')
     }
     setOpenMenu(null)
-  }
-
-  const handleCompare = async () => {
-    setOpenMenu(null)
-    if (!p1Path || !p2Path) {
-      addToast('Please select both folders first', 'error')
-      return
-    }
-    setIsComparing(true)
-    try {
-      const result = await window.electronAPI.compareProjects(p1Path, p2Path, config)
-      setCompareResult(result)
-      addToast(`Compared ${result.stats.total} files`, 'success')
-    } catch (err) {
-      addToast(`Compare failed: ${err}`, 'error')
-    } finally {
-      setIsComparing(false)
-      setCompareProgress(null)
-    }
-  }
-
-  const handleSync = async (direction: 'p1-to-p2' | 'p2-to-p1') => {
-    setOpenMenu(null)
-    if (!p1Path || !p2Path || !compareResult) return
-    if (selectedFiles.size === 0) {
-      addToast('No files selected', 'error')
-      return
-    }
-    setIsSyncing(true)
-    try {
-      await window.electronAPI.syncFiles({
-        p1Root: p1Path, p2Root: p2Path,
-        from: direction === 'p1-to-p2' ? 'p1' : 'p2',
-        to: direction === 'p1-to-p2' ? 'p2' : 'p1',
-        files: Array.from(selectedFiles)
-      }, config)
-      addToast(`Synced ${selectedFiles.size} files`, 'success')
-      const result = await window.electronAPI.compareProjects(p1Path, p2Path, config)
-      setCompareResult(result)
-      const history = await window.electronAPI.getHistory()
-      setSyncHistory(history)
-    } catch (err) {
-      addToast(`Sync failed: ${err}`, 'error')
-    } finally {
-      setIsSyncing(false)
-      setSyncProgress(null)
-    }
   }
 
   const handleExportReport = async () => {
@@ -124,7 +78,6 @@ export default function MenuBar() {
     }
   }
 
-  // Load recent projects
   const [recentProjects, setRecentProjects] = useState<any[]>([])
   useEffect(() => {
     if (openMenu === 'File') {
@@ -174,7 +127,7 @@ export default function MenuBar() {
       { label: '🌙 Dark Theme', onClick: () => { setTheme('dark'); setOpenMenu(null) }, disabled: theme === 'dark' }
     ],
     Sync: [
-      { label: 'Compare', onClick: handleCompare, disabled: !p1Path || !p2Path || isComparing, shortcut: '' },
+      { label: 'Compare', onClick: () => { setOpenMenu(null); handleCompare() }, disabled: !p1Path || !p2Path || isComparing, shortcut: '' },
       { separator: true },
       { label: 'Sync P1 → P2', onClick: () => { setOpenMenu(null); setPendingSync('p1-to-p2') }, disabled: !compareResult || isSyncing },
       { label: 'Sync P2 → P1', onClick: () => { setOpenMenu(null); setPendingSync('p2-to-p1') }, disabled: !compareResult || isSyncing },

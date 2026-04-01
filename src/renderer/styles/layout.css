@@ -1,0 +1,46 @@
+/* ═══════════════════════════════════════════════ */
+/* APP LAYOUT                                      */
+/* ═══════════════════════════════════════════════ */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  -webkit-app-region: no-drag;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* RESIZE HANDLE                                   */
+/* ═══════════════════════════════════════════════ */
+.resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.resize-handle:hover::after,
+.resize-handle--active::after {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
+}
