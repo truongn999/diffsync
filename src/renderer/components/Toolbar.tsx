@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import type { FileStatus } from '../../shared/types'
-import { useEffect, useRef, useState } from 'react'
+import { useCompare } from '../hooks/useCompare'
+import { useSync } from '../hooks/useSync'
+import { useWatcher } from '../hooks/useWatcher'
 import ConfirmDialog from './ConfirmDialog'
+import type { FileStatus } from '../../shared/types'
 
 const FILTERS: { key: FileStatus | 'all'; label: string; color?: string }[] = [
   { key: 'all', label: 'Changes' },
@@ -19,109 +22,14 @@ interface ToolbarProps {
 export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
   const {
     compareResult, currentFilter, setFilter, isComparing,
-    p1Path, p2Path, config, setCompareResult, setIsComparing,
-    addToast, selectedFiles, isSyncing, setIsSyncing, setSyncProgress,
-    setSyncHistory, isWatching, setIsWatching, theme, setTheme,
-    compareProgress, setCompareProgress
+    p1Path, p2Path, addToast, selectedFiles, isSyncing,
+    theme, setTheme, compareProgress
   } = useAppStore()
 
-  const cleanupRef = useRef<(() => void) | null>(null)
+  const { handleCompare } = useCompare()
+  const { handleSync } = useSync()
+  const { handleToggleWatch, isWatching } = useWatcher()
   const [pendingSync, setPendingSync] = useState<'p1-to-p2' | 'p2-to-p1' | null>(null)
-
-  const handleCompare = async () => {
-    if (!p1Path || !p2Path) {
-      addToast('Please select both project folders first', 'error')
-      return
-    }
-    setIsComparing(true)
-    try {
-      const result = await window.electronAPI.compareProjects(p1Path, p2Path, config)
-      setCompareResult(result)
-      addToast(`Compared ${result.stats.total} files`, 'success')
-    } catch (err) {
-      addToast(`Compare failed: ${err}`, 'error')
-    } finally {
-      setIsComparing(false)
-      setCompareProgress(null)
-    }
-  }
-
-  const handleSync = async (direction: 'p1-to-p2' | 'p2-to-p1') => {
-    if (!p1Path || !p2Path || selectedFiles.size === 0) return
-    setIsSyncing(true)
-    try {
-      const result = await window.electronAPI.syncFiles({
-        from: direction === 'p1-to-p2' ? 'p1' : 'p2',
-        to: direction === 'p1-to-p2' ? 'p2' : 'p1',
-        files: [...selectedFiles],
-        p1Root: p1Path,
-        p2Root: p2Path
-      }, config)
-
-      if (result.success) {
-        addToast(`Synced ${result.syncedFiles.length} files`, 'success')
-      } else {
-        addToast(`Sync completed with ${result.failedFiles.length} errors`, 'error')
-      }
-
-      const history = await window.electronAPI.getHistory()
-      setSyncHistory(history)
-      handleCompare()
-    } catch (err) {
-      addToast(`Sync failed: ${err}`, 'error')
-    } finally {
-      setIsSyncing(false)
-      setSyncProgress(null)
-    }
-  }
-
-  const stats = compareResult?.stats
-
-  const handleToggleWatch = async () => {
-    if (isWatching) {
-      await window.electronAPI.stopWatching()
-      if (cleanupRef.current) cleanupRef.current()
-      cleanupRef.current = null
-      setIsWatching(false)
-      addToast('File watcher stopped', 'info')
-    } else {
-      if (!p1Path || !p2Path) {
-        addToast('Select both projects first', 'error')
-        return
-      }
-      try {
-        await window.electronAPI.startWatching(p1Path, p2Path, config.ignore)
-        cleanupRef.current = window.electronAPI.onFilesChanged(async () => {
-          // Use getState() to always read fresh state, avoiding stale closures
-          const state = useAppStore.getState()
-          const { p1Path: currentP1, p2Path: currentP2, config: currentConfig } = state
-          if (!currentP1 || !currentP2) return
-          state.setIsComparing(true)
-          try {
-            const result = await window.electronAPI.compareProjects(currentP1, currentP2, currentConfig)
-            useAppStore.getState().setCompareResult(result)
-            useAppStore.getState().addToast(`Auto-refreshed: ${result.stats.total} files`, 'info')
-          } catch (err) {
-            useAppStore.getState().addToast(`Auto-refresh failed: ${err}`, 'error')
-          } finally {
-            useAppStore.getState().setIsComparing(false)
-          }
-        })
-        setIsWatching(true)
-        addToast('Watching for file changes...', 'success')
-      } catch (err) {
-        addToast(`Failed to start watcher: ${err}`, 'error')
-      }
-    }
-  }
-
-  // Cleanup watcher on unmount
-  useEffect(() => {
-    return () => {
-      if (cleanupRef.current) cleanupRef.current()
-      window.electronAPI.stopWatching().catch(() => {})
-    }
-  }, [])
 
   // Listen for compare progress
   useEffect(() => {
@@ -130,6 +38,8 @@ export default function Toolbar({ onShowShortcuts }: ToolbarProps) {
     })
     return cleanup
   }, [])
+
+  const stats = compareResult?.stats
 
   const phaseLabel: Record<string, string> = {
     'scanning-p1': 'Scanning P1...',

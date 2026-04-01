@@ -1,0 +1,14 @@
+/* CSS Module Index — imports all component styles */
+@import './base.css';
+@import './layout.css';
+@import './buttons.css';
+@import './titlebar.css';
+@import './menubar.css';
+@import './toolbar.css';
+@import './sidebar.css';
+@import './file-panel.css';
+@import './diff-panel.css';
+@import './merge-editor.css';
+@import './modal.css';
+@import './toast.css';
+@import './statusbar.css';

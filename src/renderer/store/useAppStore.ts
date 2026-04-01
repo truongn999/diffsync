@@ -1,30 +1,7 @@
 import { create } from 'zustand'
 import type { CompareItem, CompareResult, DiffResult, SyncConfig, SyncHistoryEntry, FileInfo, FileStatus } from '../../shared/types'
-
-const DEFAULT_CONFIG: SyncConfig = {
-  groups: [],
-  ignore: [
-    'node_modules/**',
-    '.git/**',
-    'dist/**',
-    'build/**',
-    'out/**',
-    'release/**',
-    '.next/**',
-    '.nuxt/**',
-    '.env*',
-    '*.log',
-    'package-lock.json',
-    'yarn.lock',
-    'pnpm-lock.yaml'
-  ],
-  extensions: [],
-  backup: { enabled: true, directory: 'backup' },
-  selectedPaths: []
-}
-
-type ViewMode = 'flat' | 'tree'
-type SidebarTab = 'projects' | 'config' | 'history'
+import { DEFAULT_CONFIG } from './constants'
+import type { ViewMode, SidebarTab } from './constants'
 
 interface AppState {
   // Project paths
