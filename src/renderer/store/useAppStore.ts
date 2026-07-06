@@ -57,6 +57,12 @@ interface AppState {
   // Theme
   theme: 'light' | 'dark'
 
+  // Diff stats cache (per file path → { additions, deletions })
+  diffStatsCache: Map<string, { additions: number; deletions: number }>
+
+  // Preload cache for adjacent file contents
+  preloadCache: Map<string, { p1Content: string; p2Content: string }>
+
   // Actions
   setP1Path: (p: string | null) => void
   setP2Path: (p: string | null) => void
@@ -86,6 +92,11 @@ interface AppState {
   setCompareProgress: (p: { phase: string; current: number; total: number } | null) => void
   setIsWatching: (v: boolean) => void
   setTheme: (t: 'light' | 'dark') => void
+  navigateFile: (direction: -1 | 1) => void
+  setDiffStatsCache: (cache: Map<string, { additions: number; deletions: number }>) => void
+  updateDiffStat: (path: string, stat: { additions: number; deletions: number }) => void
+  setPreloadCache: (cache: Map<string, { p1Content: string; p2Content: string }>) => void
+  updatePreloadEntry: (path: string, entry: { p1Content: string; p2Content: string }) => void
 
   // Computed helpers
   getFilteredFiles: () => CompareItem[]
@@ -119,6 +130,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   compareProgress: null,
   isWatching: false,
   theme: 'dark',
+  diffStatsCache: new Map(),
+  preloadCache: new Map(),
 
   setP1Path: (p) => set({ p1Path: p }),
   setP2Path: (p) => set({ p2Path: p }),
@@ -131,9 +144,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       const validPaths = new Set(r.items.filter(f => f.status !== 'same').map(f => f.relativePath))
       // Keep only selections that still exist and are non-same
       const kept = new Set([...current].filter(p => validPaths.has(p)))
-      set({ compareResult: r, currentFilter: 'all', selectedFiles: kept })
+      set({ compareResult: r, currentFilter: 'all', selectedFiles: kept, diffStatsCache: new Map(), preloadCache: new Map() })
     } else {
-      set({ compareResult: r, currentFilter: 'all', selectedFiles: new Set() })
+      set({ compareResult: r, currentFilter: 'all', selectedFiles: new Set(), diffStatsCache: new Map(), preloadCache: new Map() })
     }
   },
   setFilter: (f) => set({ currentFilter: f }),
@@ -177,6 +190,37 @@ export const useAppStore = create<AppState>((set, get) => ({
     window.electronAPI.saveTheme(t)
     window.electronAPI.setTitleBarTheme(t)
   },
+
+  navigateFile: (direction) => {
+    const files = get().getFilteredFiles()
+    if (files.length === 0) return
+    const currentIndex = files.findIndex(f => f.relativePath === get().activeFile?.relativePath)
+    const nextIndex = currentIndex === -1
+      ? 0
+      : Math.max(0, Math.min(files.length - 1, currentIndex + direction))
+    const nextFile = files[nextIndex]
+    if (nextFile.relativePath !== get().activeFile?.relativePath) {
+      set({ activeFile: nextFile })
+    }
+  },
+
+  setDiffStatsCache: (cache) => set({ diffStatsCache: cache }),
+  updateDiffStat: (path, stat) => set((state) => {
+    const next = new Map(state.diffStatsCache)
+    next.set(path, stat)
+    return { diffStatsCache: next }
+  }),
+  setPreloadCache: (cache) => set({ preloadCache: cache }),
+  updatePreloadEntry: (path, entry) => set((state) => {
+    const next = new Map(state.preloadCache)
+    next.set(path, entry)
+    // Keep cache small — max 5 entries
+    if (next.size > 5) {
+      const firstKey = next.keys().next().value
+      if (firstKey) next.delete(firstKey)
+    }
+    return { preloadCache: next }
+  }),
 
   getFilteredFiles: () => {
     const { compareResult, currentFilter, searchQuery } = get()
