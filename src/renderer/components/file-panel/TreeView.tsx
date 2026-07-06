@@ -5,9 +5,10 @@ import type { CompareItem } from '../../../shared/types'
 interface TreeViewProps {
   files: CompareItem[]
   onFileClick: (f: CompareItem) => void
+  diffStatsCache: Map<string, { additions: number; deletions: number }>
 }
 
-export default function TreeView({ files, onFileClick }: TreeViewProps) {
+export default function TreeView({ files, onFileClick, diffStatsCache }: TreeViewProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
   // Build tree
@@ -58,18 +59,37 @@ export default function TreeView({ files, onFileClick }: TreeViewProps) {
     if (node.__files__) {
       node.__files__.forEach((file: CompareItem) => {
         const name = file.relativePath.split('/').pop()!
+        const stats = diffStatsCache.get(file.relativePath)
+        const isActive = useAppStore.getState().activeFile?.relativePath === file.relativePath
+
         elements.push(
-          <div key={file.relativePath} className="file-row" style={{ paddingLeft: 8 + (depth) * 16 + 20 }} onClick={() => onFileClick(file)}>
+          <div
+            key={file.relativePath}
+            className={`file-row ${isActive ? 'file-row--active' : ''}`}
+            style={{ paddingLeft: 8 + (depth) * 16 + 20 }}
+            onClick={() => onFileClick(file)}
+            data-file-path={file.relativePath}
+          >
             <div className="file-row__check" onClick={e => e.stopPropagation()}>
               <input type="checkbox" checked={useAppStore.getState().selectedFiles.has(file.relativePath)}
                 onChange={() => useAppStore.getState().toggleFileSelection(file.relativePath)} />
             </div>
             <div className="file-row__path"><span className="file-row__path-name">{name}</span></div>
+            <div className="file-row__stats">
+              {file.status === 'same' ? null : stats ? (
+                <>
+                  {stats.additions > 0 && <span className="file-row__stats-add">+{stats.additions}</span>}
+                  {stats.deletions > 0 && <span className="file-row__stats-del">-{stats.deletions}</span>}
+                  {stats.additions === 0 && stats.deletions === 0 && <span className="file-row__stats-zero">±0</span>}
+                </>
+              ) : (
+                <span className="file-row__stats-loading">···</span>
+              )}
+            </div>
             <span className={`status-badge status-badge--${file.status}`}>
               <span className="status-badge__dot" />
               {file.status.replace('_', ' ').toUpperCase()}
             </span>
-            <div />
           </div>
         )
       })

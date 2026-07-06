@@ -26,21 +26,38 @@ interface FlatFileRowProps {
   onToggle: () => void
   onClick: () => void
   statusLabel: string
+  diffStats?: { additions: number; deletions: number }
 }
 
-export default function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabel }: FlatFileRowProps) {
+export default function FlatFileRow({ file, isSelected, isActive, onToggle, onClick, statusLabel, diffStats }: FlatFileRowProps) {
   const parts = file.relativePath.split('/')
   const name = parts.pop()!
   const dir = parts.join('/') + '/'
 
   return (
-    <div className={`file-row ${isActive ? 'file-row--active' : ''}`} onClick={onClick} title={buildTooltip(file)}>
+    <div
+      className={`file-row ${isActive ? 'file-row--active' : ''}`}
+      onClick={onClick}
+      title={buildTooltip(file)}
+      data-file-path={file.relativePath}
+    >
       <div className="file-row__check" onClick={e => e.stopPropagation()}>
         <input type="checkbox" checked={isSelected} onChange={onToggle} />
       </div>
       <div className="file-row__path">
         <span className="file-row__path-dir">{dir}</span>
         <span className="file-row__path-name">{name}</span>
+      </div>
+      <div className="file-row__stats">
+        {file.status === 'same' ? null : diffStats ? (
+          <>
+            {diffStats.additions > 0 && <span className="file-row__stats-add">+{diffStats.additions}</span>}
+            {diffStats.deletions > 0 && <span className="file-row__stats-del">-{diffStats.deletions}</span>}
+            {diffStats.additions === 0 && diffStats.deletions === 0 && <span className="file-row__stats-zero">±0</span>}
+          </>
+        ) : (
+          <span className="file-row__stats-loading">···</span>
+        )}
       </div>
       <div>
         <span className={`status-badge status-badge--${file.status}`}>

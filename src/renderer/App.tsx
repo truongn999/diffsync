@@ -11,9 +11,12 @@ import Toast from './components/Toast'
 import SyncModal from './components/SyncModal'
 import ScopeSelector from './components/ScopeSelector'
 import ShortcutsModal from './components/ShortcutsModal'
+import { useDiffStats } from './hooks/useDiffStats'
 import { useState } from 'react'
 
 export default function App() {
+  // Background batch computation of diff stats for file list
+  useDiffStats()
   const {
     sidebarCollapsed,
     toggleSidebar,
@@ -23,7 +26,11 @@ export default function App() {
     isSyncing,
     addToast,
     setViewMode,
-    setTheme
+    setTheme,
+    navigateFile,
+    toggleFileSelection,
+    activeFile,
+    compareResult
   } = useAppStore()
 
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -97,6 +104,25 @@ export default function App() {
     // Don't process shortcuts if typing in an input
     if (isInput) return
 
+    // ─── File navigation (↑/↓/Space) ───────────
+    if (compareResult) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        navigateFile(1)
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        navigateFile(-1)
+        return
+      }
+      if (e.key === ' ' && activeFile) {
+        e.preventDefault()
+        toggleFileSelection(activeFile.relativePath)
+        return
+      }
+    }
+
     // ? → Show shortcuts
     if (e.key === '?') { setShowShortcuts(true); e.preventDefault(); return }
 
@@ -121,7 +147,7 @@ export default function App() {
           break
       }
     }
-  }, [showShortcuts, toggleSidebar, setSearchQuery, setFilter, setViewMode])
+  }, [showShortcuts, toggleSidebar, setSearchQuery, setFilter, setViewMode, navigateFile, toggleFileSelection, activeFile, compareResult])
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)

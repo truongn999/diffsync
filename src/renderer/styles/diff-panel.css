@@ -51,6 +51,48 @@
   gap: 8px;
 }
 
+/* ─── File Navigation ─────────────────────── */
+.diff-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.diff-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-primary);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.diff-nav__btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.diff-nav__btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.diff-nav__counter {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  min-width: 48px;
+  text-align: center;
+  padding: 0 4px;
+  user-select: none;
+}
+
 .diff-panel__placeholder {
   flex: 1;
   display: flex;

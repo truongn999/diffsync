@@ -20,7 +20,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function DiffPanel() {
-  const { activeFile, isDiffLoading, p1Path, p2Path, theme, addToast, config, setCompareResult, setIsComparing } = useAppStore()
+  const { activeFile, isDiffLoading, p1Path, p2Path, theme, addToast, config, setCompareResult, setIsComparing, navigateFile, getFilteredFiles, preloadCache } = useAppStore()
   const [p1Content, setP1Content] = useState('')
   const [p2Content, setP2Content] = useState('')
   const [isInline, setIsInline] = useState(false)
@@ -78,6 +78,15 @@ export default function DiffPanel() {
     } else {
       setP1ImageData(null)
       setP2ImageData(null)
+
+      // Check preload cache first for instant content
+      const cached = preloadCache.get(activeFile.relativePath)
+      if (cached) {
+        setP1Content(cached.p1Content)
+        setP2Content(cached.p2Content)
+        return
+      }
+
       const loadContent = async () => {
         const [c1, c2] = await Promise.all([
           activeFile.p1 && p1Path
@@ -92,7 +101,7 @@ export default function DiffPanel() {
       }
       loadContent()
     }
-  }, [activeFile, p1Path, p2Path])
+  }, [activeFile, p1Path, p2Path, preloadCache])
 
   // Reset merge editor when active file changes
   useEffect(() => {
@@ -174,6 +183,13 @@ export default function DiffPanel() {
   const isConflict = activeFile.status === 'conflict'
   const isBinary = isImageFile(activeFile.relativePath)
 
+  // ─── Navigation helpers ────────────────────
+  const filteredFiles = getFilteredFiles()
+  const currentIndex = filteredFiles.findIndex(f => f.relativePath === activeFile.relativePath)
+  const totalFiles = filteredFiles.length
+  const isFirst = currentIndex <= 0
+  const isLast = currentIndex >= totalFiles - 1
+
   return (
     <div className="diff-panel">
       <div className="diff-panel__header">
@@ -192,6 +208,25 @@ export default function DiffPanel() {
           <span className="diff-panel__file-name">{activeFile.relativePath}</span>
         </div>
         <div className="diff-panel__controls">
+          <div className="diff-nav">
+            <button
+              className="diff-nav__btn"
+              onClick={() => navigateFile(-1)}
+              disabled={isFirst}
+              title="Previous file (↑)"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <span className="diff-nav__counter">{currentIndex + 1} / {totalFiles}</span>
+            <button
+              className="diff-nav__btn"
+              onClick={() => navigateFile(1)}
+              disabled={isLast}
+              title="Next file (↓)"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
           <span className={`status-badge status-badge--${activeFile.status}`}>
             <span className="status-badge__dot" />
             {activeFile.status.replace('_', ' ').toUpperCase()}
