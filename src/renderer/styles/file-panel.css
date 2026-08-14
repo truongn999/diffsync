@@ -181,6 +181,28 @@
 .tree-folder__chevron { color: var(--text-muted); transition: transform var(--transition-fast); }
 .tree-folder__chevron--open { transform: rotate(90deg); }
 .tree-folder__icon { color: var(--accent); }
+.tree-folder__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
+}
+.tree-folder__check input {
+  accent-color: var(--accent);
+  cursor: pointer;
+  width: 13px;
+  height: 13px;
+}
+.tree-folder__name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.tree-folder__count {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 2px;
+}
 .tree-children { padding-left: 16px; }
 .tree-children--collapsed { display: none; }
 
