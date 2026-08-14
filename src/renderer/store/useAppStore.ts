@@ -73,6 +73,7 @@ interface AppState {
   setFilter: (f: FileStatus | 'all') => void
   setSearchQuery: (q: string) => void
   toggleFileSelection: (path: string) => void
+  toggleFolderSelection: (paths: string[], select: boolean) => void
   selectAllFiles: () => void
   deselectAllFiles: () => void
   setActiveFile: (f: CompareItem | null) => void
@@ -155,6 +156,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     const next = new Set(state.selectedFiles)
     if (next.has(path)) next.delete(path)
     else next.add(path)
+    return { selectedFiles: next }
+  }),
+  toggleFolderSelection: (paths, select) => set((state) => {
+    const next = new Set(state.selectedFiles)
+    if (select) {
+      paths.forEach(p => next.add(p))
+    } else {
+      paths.forEach(p => next.delete(p))
+    }
     return { selectedFiles: next }
   }),
   selectAllFiles: () => set((state) => {
